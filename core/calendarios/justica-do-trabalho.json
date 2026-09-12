@@ -1,0 +1,10 @@
+{
+  "_comentario": "Justiça do Trabalho. Prazos em dias úteis por força do art. 775 da CLT (red. Lei 13.467/2017); recesso do art. 775-A.",
+  "nome": "Justiça do Trabalho (padrão nacional, sem feriados locais)",
+  "justica_federal": false,
+  "aplicar_recesso": true,
+  "considerar_moveis": ["Segunda-feira de Carnaval", "Terça-feira de Carnaval", "Sexta-feira da Paixão", "Corpus Christi"],
+  "locais": {},
+  "confirmado": false,
+  "observacoes": "Cadastre os feriados locais e os atos de suspensão do TRT competente. Verifique também 11 de agosto, tratado como feriado forense em parte dos regimentos."
+}

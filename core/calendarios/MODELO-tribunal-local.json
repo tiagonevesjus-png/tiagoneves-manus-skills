@@ -1,0 +1,12 @@
+{
+  "_comentario": "MODELO. Copie este arquivo para <sigla-do-tribunal>.json, preencha 'locais' com datas conferidas no portal do tribunal e só então marque 'confirmado': true.",
+  "nome": "[PREENCHER] Tribunal / comarca",
+  "justica_federal": false,
+  "aplicar_recesso": true,
+  "considerar_moveis": ["Segunda-feira de Carnaval", "Terça-feira de Carnaval", "Sexta-feira da Paixão", "Corpus Christi"],
+  "locais": {
+    "2026-01-01": "[EXEMPLO - substitua] descrição do feriado local conferido"
+  },
+  "confirmado": false,
+  "observacoes": "[DADO PENDENTE] Fonte da conferência (portaria/resolução do tribunal e data de consulta)."
+}

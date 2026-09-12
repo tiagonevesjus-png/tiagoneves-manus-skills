@@ -1,0 +1,10 @@
+{
+  "_comentario": "Justiça Federal e Tribunais Superiores. Feriados do art. 62 da Lei 5.010/1966 aplicados automaticamente.",
+  "nome": "Justiça Federal / Tribunais Superiores (Lei 5.010/1966, art. 62)",
+  "justica_federal": true,
+  "aplicar_recesso": true,
+  "considerar_moveis": ["Segunda-feira de Carnaval", "Terça-feira de Carnaval", "Sexta-feira da Paixão", "Corpus Christi"],
+  "locais": {},
+  "confirmado": false,
+  "observacoes": "O art. 62, I, da Lei 5.010/1966 fixa recesso de 20/12 a 06/01; o art. 220 do CPC suspende prazos de 20/12 a 20/01. O motor aplica os dois, prevalecendo o período mais amplo. Confirme feriados da seção judiciária."
+}
