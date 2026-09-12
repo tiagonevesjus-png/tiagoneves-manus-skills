@@ -40,6 +40,7 @@ de prazos com base legal conferida na fonte oficial.
 - **`cnj.py`** — validação do número único pelo dígito verificador.
 - **`acervo.py`** — processos, movimentos e prazos, com desduplicação.
 - **`planilha.py`** — planilha de controle em xlsx.
+- **`filtros_gmail.py`** — filtros nativos do Gmail para a taxonomia TNADV.
 
 ## Três premissas de projeto
 

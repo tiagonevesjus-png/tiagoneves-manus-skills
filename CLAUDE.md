@@ -50,6 +50,18 @@ digital sob guarda pessoal do advogado, e é ato dele.
 Triagem de e-mail apenas rotula. Dashboard cria rascunho, não envia. Nenhuma
 automação exclui arquivo, mensagem ou registro.
 
+Isso vale também para os filtros nativos do Gmail gerados por
+`core/filtros_gmail.py`: regra que arquive, exclua, marque como lida ou
+encaminhe é recusada na montagem, e um teste trava a recusa.
+
+### 5.1. Sem intermediário no caminho do dado
+
+Dado de cliente protegido por sigilo profissional não passa por plataforma de
+automação de terceiro. Quando o conector nativo não fizer o que se precisa,
+a ordem de preferência é: mecanismo nativo do próprio serviço (filtro do Gmail,
+por exemplo), depois trabalho manual assistido por relatório, e só então, com
+decisão expressa do advogado, integração externa.
+
 ### 6. Sigilo e LGPD
 
 Ver `docs/LGPD.md`. O diretório `data/` não é versionado. Documentos de cliente

@@ -10,12 +10,28 @@ herdada de migração IMAP, com pastas do tipo `[Gmail]/Lixeira/PENDENTES` que j
 não significam nada. Esta skill separa o que exige providência do que virou
 histórico, sem apagar nada.
 
-## Como ler e como escrever
+## Arquitetura: filtro nativo faz o mecânico, a triagem faz o julgamento
 
-**Leia pelo conector Gmail, escreva pelo Zapier.** O conector Gmail da Anthropic
-é somente leitura e rascunho: não cria nem aplica rótulo. A escrita passa pelo
-Zapier, app Gmail. Os identificadores dos rótulos e o formato da chamada estão
-em `references/rotulos.md`.
+O conector Gmail é somente leitura e rascunho. Ele não aplica rótulo, e não há
+como fazê-lo aplicar. Em vez de contornar isso com integração de terceiro, o
+trabalho foi partido em duas metades, cada uma no lugar onde funciona melhor:
+
+**Os filtros nativos do Gmail** cuidam do que é determinístico: remetente de
+tribunal, domínio `.jus.br`, assunto com marcador inequívoco, bancos, ferramentas.
+Rodam no servidor do Google, em toda mensagem que chega, sem sessão aberta e sem
+dependência externa. Gerados por `tools/gerar_filtros_gmail.py` e importados uma
+única vez em Gmail, Configurações, Filtros e endereços bloqueados, Importar
+filtros. Ver `references/filtros-nativos.md`.
+
+**Esta skill** cuida do que exige leitura e julgamento, e que filtro nenhum
+resolve: distinguir intimação de aviso de movimentação, cliente de fornecedor,
+conta do escritório de conta pessoal, urgência real de ruído. A saída é
+**relatório**, entregue como rascunho no Gmail, não rótulo aplicado.
+
+Quando a classificação por julgamento indicar rótulo que o filtro não pegou, o
+relatório diz qual mensagem e qual rótulo, e você aplica com dois cliques, ou
+me pede uma regra nova de filtro para que aquele caso nunca mais precise de
+julgamento.
 
 ## Taxonomia TNADV
 
@@ -99,24 +115,71 @@ is:unread older_than:90d newer_than:1y
 is:unread older_than:1y
 ```
 
-Em cada lote: classifique, rotule, e produza um relatório do que foi encontrado.
-Mensagens com mais de um ano e sem número CNJ vão para `TNADV/Arquivo`.
+Em cada lote: classifique e produza o relatório. Mensagens com mais de um ano e
+sem número CNJ são candidatas a `TNADV/Arquivo`.
 
 Processe no máximo 100 mensagens por execução e informe onde parou, para que a
 execução seguinte continue do ponto certo.
 
+Atenção ao alcance do filtro nativo: ele age sobre o que **chega**, não sobre o
+passivo já na caixa. Para o acervo antigo, o Gmail permite selecionar o
+resultado de uma busca e aplicar o rótulo em massa, pela própria interface. O
+relatório desta skill entrega as buscas prontas para isso, no formato:
+
+```
+Busca: from:(trt16.jus.br) older_than:1y
+Rótulo a aplicar: TNADV/Intimações
+Mensagens estimadas: [n]
+```
+
+Assim a varredura do passivo vira uma sequência de operações em massa na
+interface do Gmail, não milhares de chamadas de automação.
+
 ## Regras invioláveis
 
-1. **Nunca apague, mova para lixeira ou marque como spam.** Esta skill só rotula.
-   Exclusão é decisão do advogado, tomada mensagem a mensagem.
+1. **Nunca apague, mova para lixeira ou marque como spam.** Exclusão é decisão do
+   advogado, tomada mensagem a mensagem.
 2. **Nunca marque como lida** uma mensagem classificada como `TNADV/Intimações`
    ou `TNADV/Prazos`. O não lido é a última barreira contra perda de prazo.
 3. **Nunca responda e-mail** a partir da triagem.
-4. Ao encontrar número CNJ, valide com `core.cnj.validar` antes de usar.
-5. Em caso de dúvida entre duas categorias, aplique as duas e mande para
-   `TNADV/Triagem/Revisar`. Erro de classificação silencioso é pior que ruído.
+4. Nenhuma regra de filtro gerada aqui arquiva, marca como lida, exclui ou
+   encaminha. Filtro TNADV só rotula, e `core/filtros_gmail.py` recusa a
+   montagem de qualquer regra que viole isso.
+5. Ao encontrar número CNJ, valide com `core.cnj.validar` antes de usar.
+6. Em caso de dúvida entre duas categorias, indique as duas e marque para
+   `Revisar`. Erro de classificação silencioso é pior que ruído.
 
 ## Relatório de execução
 
-Ao final, informe: total examinado, distribuição por rótulo, quantos foram para
-`Revisar` e por quê, números CNJ novos detectados, e o ponto de parada.
+Entregue como rascunho no Gmail, com:
+
+```
+TRIAGEM TNADV — [período examinado]
+
+RESUMO
+Total examinado: [n] | Já rotulado por filtro nativo: [n] | Requer sua ação: [n]
+
+CLASSIFICAÇÃO POR JULGAMENTO
+[Rótulo sugerido] — [assunto], de [remetente], [data]
+   Por quê: [uma linha]
+   Link: [link direto da mensagem]
+
+REVISAR
+[casos em que a automação não teve confiança, com as duas leituras possíveis]
+
+OPERAÇÕES EM MASSA SUGERIDAS
+Busca: [query Gmail] → Rótulo: [rótulo] → [n] mensagens
+
+REGRAS DE FILTRO A ACRESCENTAR
+[padrões que se repetiram e merecem virar filtro nativo, para não voltarem
+a exigir julgamento]
+
+NÚMEROS CNJ NOVOS
+[detectados e validados, ausentes do acervo]
+
+PARADA
+[onde a varredura parou, para a próxima execução continuar]
+```
+
+A seção de regras a acrescentar é o que faz o sistema melhorar com o uso: todo
+padrão que se repete deve migrar do julgamento para o filtro.
