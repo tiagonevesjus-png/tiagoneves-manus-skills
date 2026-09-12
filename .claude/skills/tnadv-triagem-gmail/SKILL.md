@@ -10,9 +10,16 @@ herdada de migração IMAP, com pastas do tipo `[Gmail]/Lixeira/PENDENTES` que j
 não significam nada. Esta skill separa o que exige providência do que virou
 histórico, sem apagar nada.
 
+## Como ler e como escrever
+
+**Leia pelo conector Gmail, escreva pelo Zapier.** O conector Gmail da Anthropic
+é somente leitura e rascunho: não cria nem aplica rótulo. A escrita passa pelo
+Zapier, app Gmail. Os identificadores dos rótulos e o formato da chamada estão
+em `references/rotulos.md`.
+
 ## Taxonomia TNADV
 
-Rótulos oficiais, criados na implantação:
+Rótulos oficiais, criados e verificados na implantação:
 
 | Rótulo | Uso |
 |---|---|
@@ -20,12 +27,22 @@ Rótulos oficiais, criados na implantação:
 | `TNADV/Prazos` | Mensagens de que decorre providência com data |
 | `TNADV/Audiências` | Designação, remarcação, links de sessão telepresencial |
 | `TNADV/Clientes` | Comunicação direta com cliente |
-| `TNADV/Financeiro` | Honorários, RPV, precatório, alvará, cobrança, nota fiscal |
+| `TNADV/Financeiro` | Honorários, RPV, precatório, alvará, cobrança, nota fiscal, contas do escritório |
 | `TNADV/Gestão Pública` | Órgãos públicos assessorados, processos administrativos, ofícios |
-| `TNADV/Administrativo` | OAB, certidões, fornecedores, rotina do escritório |
+| `TNADV/Administrativo` | OAB, certidões, fornecedores, ferramentas, rotina do escritório |
+| `TNADV/Pessoal` | Assunto pessoal do advogado, sem relação com o escritório |
 | `TNADV/Arquivo` | Encerrado, apenas histórico |
 | `TNADV/Triagem/Processado` | Já passou pela triagem automática |
 | `TNADV/Triagem/Revisar` | Automação não teve confiança suficiente; exige olho humano |
+
+`TNADV/Pessoal` existe porque a caixa é mista. A primeira varredura mostrou que
+a maior parte do não lido recente é notificação bancária, alerta de conta Google
+e marketing, não matéria jurídica. Sem essa categoria, tudo isso acabaria
+empilhado em Administrativo e a triagem perderia utilidade.
+
+Conta bancária em nome de "Guimarães e Neves Advogados" é `TNADV/Financeiro`.
+Conta em nome pessoal é `TNADV/Pessoal`. Quando o nome não distinguir, aplique
+`TNADV/Financeiro` e mande para `Revisar`.
 
 Os rótulos antigos herdados do IMAP não são apagados. Eles permanecem como
 histórico; a taxonomia nova convive com eles.
@@ -59,8 +76,15 @@ chutar uma categoria.
 
 - Newsletter jurídica e boletim de escritório usam as mesmas palavras de uma
   intimação. Verifique remetente e presença de número CNJ válido.
-- Notificação de sistema ("houve movimentação no processo X") não é intimação:
-  é aviso. O termo inicial vem do DJe ou do portal, nunca do e-mail.
+- **O PUSH do PJe não é intimação.** As mensagens de `nao-responda@trt16.jus.br`
+  com assunto `[TRT16] [PUSH] Atualizações de Informações Processuais` avisam que
+  houve movimentação. Recebem `TNADV/Intimações` por serem comunicação oficial de
+  tribunal, mas **não deflagram prazo**: o termo inicial vem do DJe ou do portal.
+  Nunca acione o radar de prazos a partir de um PUSH.
+- Convite de audiência aceito por cliente (resposta de calendário com "Aceito:"
+  no assunto) traz o número do processo, a data e o juízo no próprio título.
+  Vale `TNADV/Audiências` e `TNADV/Clientes`, e é boa fonte para conferir a
+  agenda.
 - Uma thread pode mudar de natureza. Classifique pela mensagem mais recente.
 
 ## Varredura de recuperação

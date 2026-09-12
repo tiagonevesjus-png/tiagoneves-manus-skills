@@ -13,7 +13,7 @@ que está pronto mas bloqueado, e o que fazer para destravar.
 | Dashboard diário (Routine) | **Criada e desativada** | vincular conectores e ativar |
 | Radar de intimações (skill) | **Funcionando sob demanda** | — |
 | Radar de intimações (Routine) | **Criada e desativada** | vincular conectores e ativar |
-| Triagem do Gmail | **Bloqueada** | autorizar escrita de rótulos no Gmail |
+| Triagem do Gmail | **Funcionando via Zapier** | aplicar cores à mão; seguir a varredura do passivo |
 | Sete skills da camada 2 | **Funcionando sob demanda** | — |
 
 ## Permissões verificadas
@@ -22,36 +22,78 @@ Testadas de fato nesta implantação, não presumidas:
 
 | Capacidade | Resultado |
 |---|---|
-| Ler Gmail (buscar, ler mensagem, listar rótulos) | funciona |
-| Criar rascunho no Gmail | funciona |
-| **Criar ou aplicar rótulo no Gmail** | **negado por escopo** |
+| Ler Gmail (buscar, ler mensagem, listar rótulos) | funciona (conector Gmail) |
+| Criar rascunho no Gmail | funciona (conector Gmail) |
+| Criar rótulo no Gmail | funciona **pelo Zapier** |
+| Aplicar rótulo no Gmail | funciona **pelo Zapier** |
+| **Criar ou aplicar rótulo pelo conector Gmail** | **negado por escopo** |
 | Ler Google Agenda | funciona |
 | Criar e excluir evento no Google Agenda | funciona |
 
-O erro do Gmail nomeia os escopos ausentes, entre eles
-`https://www.googleapis.com/auth/gmail.labels` e
-`https://www.googleapis.com/auth/gmail.modify`.
+### O escopo do conector Gmail não é ajustável
 
-### Como destravar a triagem
+O conector Gmail da Anthropic se descreve como "Draft replies, summarize threads,
+& search your inbox", e é exatamente isso que ele faz. A chamada de criação de
+rótulo devolve `Insufficient scope`, exigindo `gmail.labels` ou `gmail.modify`,
+que esse conector não solicita. Reautorizar o Google Workspace não muda nada:
+o conector nunca pede esses escopos. Verificado após reautorização.
 
-Em claude.ai, **Configurações → Conectores**, reconecte o Gmail concedendo
-permissão de modificação. Feito isso, peça a criação dos dez rótulos da
-taxonomia:
+A saída foi o **Zapier**, app Gmail, conexão `tiagonevesadvo@gmail.com`.
+Confirmado por teste de ida e volta: rótulo criado pelo Zapier aparece na
+listagem do conector Gmail, logo é a mesma caixa.
+
+Habilitadas no Zapier apenas `label`, `add_label`, `remove_label` e
+`remove_thread_label`. `delete_email`, `archive_email`, `forward_email` e
+`reply_to_message` ficaram deliberadamente de fora, para que a regra de que a
+triagem não apaga nem responde seja barreira técnica, não só de conduta.
+
+Detalhes e identificadores em
+`.claude/skills/tnadv-triagem-gmail/references/rotulos.md`.
+
+### A caixa é única e tem três endereços
+
+- `tiagonevesadvo@gmail.com` — conta Google subjacente, também usada pela Agenda
+  e pelo Zapier
+- `tiagoneves.jus@gmail.com` — endereço de envio, também recebe na mesma caixa
+- `advtneves@gmail.com` — destinatário dos relatórios diários
+
+Antes de qualquer automação nova sobre e-mail, confirme em qual desses endereços
+ela vai operar.
+
+### Rótulos criados
+
+Onze, todos verificados na caixa:
 
 ```
-TNADV/Intimações        vermelho
-TNADV/Prazos            vermelho escuro
-TNADV/Audiências        laranja
-TNADV/Clientes          azul
-TNADV/Financeiro        verde
-TNADV/Gestão Pública    roxo
-TNADV/Administrativo    cinza
-TNADV/Arquivo           cinza claro
-TNADV/Triagem/Processado    menta
-TNADV/Triagem/Revisar       amarelo
+TNADV/Intimações   TNADV/Prazos       TNADV/Audiências   TNADV/Clientes
+TNADV/Financeiro   TNADV/Gestão Pública   TNADV/Administrativo
+TNADV/Pessoal      TNADV/Arquivo
+TNADV/Triagem/Processado   TNADV/Triagem/Revisar
 ```
 
-Os rótulos herdados da migração IMAP não são tocados.
+`TNADV/Pessoal` não estava no desenho original. Entrou porque a primeira
+varredura mostrou que a maior parte do não lido recente é notificação bancária,
+alerta de conta Google e marketing. Sem essa categoria, tudo isso acabaria em
+Administrativo e a triagem perderia utilidade.
+
+O Zapier não define cor de rótulo. A paleta precisa ser aplicada uma vez, à mão,
+na interface do Gmail. Os rótulos herdados da migração IMAP não foram tocados.
+
+### Primeira leva de triagem
+
+Doze mensagens classificadas e rotuladas em 12/09/2026:
+
+- sete PUSH do PJe/TRT16 → `TNADV/Intimações` + `Processado`
+- cinco confirmações de audiência do cliente Fixtell Telecom →
+  `TNADV/Audiências` + `TNADV/Clientes` + `Processado`
+
+Treze números CNJ extraídos foram validados pelo dígito verificador, todos
+íntegros. O não lido foi preservado nas mensagens de audiência, como a regra
+exige.
+
+Fica registrada uma constatação importante: os PUSH do TRT16 **avisam**
+movimentação, não intimam. Recebem o rótulo de comunicação oficial, mas nunca
+devem acionar o radar de prazos.
 
 ## Routines criadas
 
@@ -94,9 +136,9 @@ Refaça isso a cada início de ano judiciário.
 
 ## Ordem sugerida de partida
 
-**Semana 1.** Reconectar o Gmail com escrita. Criar os rótulos. Rodar a triagem
-nos não lidos dos últimos 30 dias. Confirmar o calendário dos dois ou três juízos
-onde está a maior parte do acervo.
+**Semana 1.** Aplicar as cores dos rótulos à mão no Gmail. Seguir a triagem no
+passivo de não lidos, em lotes do mais recente para o mais antigo. Confirmar o
+calendário do TRT16 e do TJMA, que concentram o acervo visível.
 
 **Semana 2.** Popular `data/acervo.json` pela skill `pje-controle-processual` e
 pela `datajud`. Gerar a primeira planilha. Conferir à mão os prazos estimados e
