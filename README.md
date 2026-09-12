@@ -38,8 +38,8 @@ de prazos com base legal conferida na fonte oficial.
 - **`feriados.py`** — feriados nacionais conferidos, datas móveis pela Páscoa,
   recesso do art. 220 do CPC, feriados da Justiça Federal (Lei 5.010/1966).
 - **`cnj.py`** — validação do número único pelo dígito verificador.
-- **`acervo.py`** — processos, movimentos e prazos, com desduplicação.
-- **`planilha.py`** — planilha de controle em xlsx.
+- **`acervo.py`** — processos, movimentos, prazos e audiências, com desduplicação.
+- **`planilha.py`** — planilha de controle em xlsx, cinco abas.
 - **`filtros_gmail.py`** — filtros nativos do Gmail para a taxonomia TNADV.
 
 ## Três premissas de projeto

@@ -1,8 +1,8 @@
 """Planilha viva de controle processual.
 
-Gera um .xlsx a partir do acervo, com quatro abas: Acervo, Prazos, Movimentações
-e Conferência. A aba Conferência isola justamente o que ainda não foi validado
-por humano, para que nenhuma estimativa passe despercebida.
+Gera um .xlsx a partir do acervo, com cinco abas: Acervo, Prazos, Audiências,
+Movimentações e Conferência. A aba Conferência isola justamente o que ainda não
+foi validado por humano, para que nenhuma estimativa passe despercebida.
 
 Identidade visual: azul-marinho e dourado do escritório Tiago Neves.
 """
@@ -103,6 +103,31 @@ def _aba_prazos(wb: Workbook, acervo: Acervo, hoje: date) -> None:
     _estilizar_corpo(ws)
 
 
+def _aba_audiencias(wb: Workbook, acervo: Acervo, hoje: date) -> None:
+    ws = wb.create_sheet("Audiências")
+    _cabecalho(
+        ws,
+        ["Data", "Hora", "Dias restantes", "Nº CNJ", "Cliente", "Tipo",
+         "Local", "Modalidade", "Confirmada?", "Observações"],
+        [13, 9, 14, 24, 26, 20, 40, 15, 13, 34],
+    )
+    for proc, aud in acervo.audiencias_ate(date(hoje.year + 5, 12, 31), hoje=hoje):
+        faltam = (date.fromisoformat(aud.data) - hoje).days
+        ws.append([
+            f"{date.fromisoformat(aud.data):%d/%m/%Y}", aud.hora, faltam,
+            proc.numero, proc.cliente, aud.tipo, aud.local, aud.modalidade,
+            "SIM" if aud.confirmada_por_humano else "NÃO", aud.observacoes,
+        ])
+        cor = CORES_URGENCIA["vermelho" if faltam <= 7 else "amarelo" if faltam <= 30 else "verde"]
+        for col in (1, 2, 3):
+            ws.cell(row=ws.max_row, column=col).fill = PatternFill("solid", fgColor=cor)
+        if not aud.confirmada_por_humano:
+            ws.cell(row=ws.max_row, column=9).font = Font(bold=True, color="B42318")
+    if ws.max_row == 1:
+        ws.cell(row=2, column=1, value="Nenhuma audiência designada no acervo.")
+    _estilizar_corpo(ws)
+
+
 def _aba_movimentacoes(wb: Workbook, acervo: Acervo) -> None:
     ws = wb.create_sheet("Movimentações")
     _cabecalho(ws, ["Data", "Nº CNJ", "Cliente", "Fonte", "Descrição"], [14, 24, 24, 12, 70])
@@ -165,6 +190,7 @@ def gerar(
     wb = Workbook()
     _aba_acervo(wb, acervo, ref)
     _aba_prazos(wb, acervo, ref)
+    _aba_audiencias(wb, acervo, ref)
     _aba_movimentacoes(wb, acervo)
     _aba_conferencia(wb, acervo)
     caminho = Path(destino)

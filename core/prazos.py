@@ -262,7 +262,7 @@ def contar_prazo(
         raise ValueError("O prazo em dias deve ser positivo.")
 
     cal = Calendario.carregar(calendario) if isinstance(calendario, str) else calendario
-    avisos: list[str] = list(cal.avisos())
+    avisos: list[str] = list(cal.avisos(ano=evento.year))
     base_legal: list[str] = list(BASE_LEGAL_REGIME[regime]) + list(BASE_LEGAL_TERMO[termo])
 
     dias_efetivos = dias
@@ -317,6 +317,13 @@ def contar_prazo(
                 break
             atual += timedelta(days=1)
         vencimento = atual
+
+    if vencimento.year != evento.year and vencimento.year not in cal.anos_cobertos():
+        avisos.append(
+            f"O prazo termina em {vencimento.year}, ano sem feriado local cadastrado no "
+            f"calendário '{cal.nome}'. A contagem atravessa a virada do ano com os "
+            "feriados locais incompletos. Regenere o calendário antes de agendar."
+        )
 
     if any(d.motivo and "recesso" in d.motivo for d in trilha):
         avisos.append(

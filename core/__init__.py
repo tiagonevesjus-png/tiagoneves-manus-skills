@@ -1,12 +1,12 @@
 """Núcleo compartilhado das automações jurídicas TNADV."""
 
-from .acervo import Acervo, Movimento, Prazo, Processo, classificar_urgencia
+from .acervo import Acervo, Audiencia, Movimento, Prazo, Processo, classificar_urgencia
 from .cnj import NumeroCNJ, e_valido, extrair, validar
 from .feriados import Calendario, pascoa
 from .prazos import Regime, ResultadoPrazo, TermoInicial, contar_prazo
 
 __all__ = [
-    "Acervo", "Movimento", "Prazo", "Processo", "classificar_urgencia",
+    "Acervo", "Audiencia", "Movimento", "Prazo", "Processo", "classificar_urgencia",
     "NumeroCNJ", "e_valido", "extrair", "validar",
     "Calendario", "pascoa",
     "Regime", "ResultadoPrazo", "TermoInicial", "contar_prazo",

@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 
 from core import cnj
-from core.acervo import Acervo, Movimento, Prazo, classificar_urgencia
+from core.acervo import Acervo, Audiencia, Movimento, Prazo, classificar_urgencia
 
 
 def numero_valido() -> str:
@@ -127,7 +127,7 @@ def test_nao_conferidos_lista_apenas_pendentes():
     assert [p.descricao for _, p in acervo.nao_conferidos()] == ["A"]
 
 
-def test_planilha_e_gerada_com_as_quatro_abas(tmp_path):
+def test_planilha_e_gerada_com_as_cinco_abas(tmp_path):
     from openpyxl import load_workbook
 
     from core import planilha
@@ -141,5 +141,48 @@ def test_planilha_e_gerada_com_as_quatro_abas(tmp_path):
     ))
     destino = planilha.gerar(acervo, tmp_path / "controle.xlsx", hoje=date(2026, 9, 12))
     wb = load_workbook(destino)
-    assert wb.sheetnames == ["Acervo", "Prazos", "Movimentações", "Conferência"]
+    assert wb.sheetnames == ["Acervo", "Prazos", "Audiências", "Movimentações", "Conferência"]
     assert wb["Conferência"]["A5"].value == numero_valido()
+
+
+def test_audiencia_nao_duplica_mesma_data_e_hora():
+    proc = Acervo().obter_ou_criar(numero_valido())
+    a = Audiencia(data="2026-10-01", hora="09:20", tipo="una", local="Juizado")
+    assert proc.registrar_audiencia(a) is True
+    assert proc.registrar_audiencia(a) is False
+    assert len(proc.audiencias) == 1
+
+
+def test_audiencias_futuras_ignora_as_passadas():
+    proc = Acervo().obter_ou_criar(numero_valido())
+    proc.registrar_audiencia(Audiencia(data="2026-01-10", hora="09:00"))
+    proc.registrar_audiencia(Audiencia(data="2026-10-01", hora="09:20"))
+    futuras = proc.audiencias_futuras(hoje=date(2026, 9, 12))
+    assert [a.data for a in futuras] == ["2026-10-01"]
+
+
+def test_audiencia_persiste_no_acervo(tmp_path):
+    acervo = Acervo()
+    proc = acervo.obter_ou_criar(numero_valido(), cliente="Cliente Teste")
+    proc.registrar_audiencia(Audiencia(
+        data="2026-11-12", hora="08:30", tipo="una",
+        local="9º Juizado de São Luís", modalidade="presencial",
+    ))
+    destino = tmp_path / "acervo.json"
+    acervo.salvar(destino)
+    recarregado = Acervo.carregar(destino)
+    aud = recarregado.processos[numero_valido()].audiencias[0]
+    assert aud.quando() == "12/11/2026 às 08:30"
+    assert aud.confirmada_por_humano is False
+
+
+def test_audiencias_ate_ordena_por_data_e_hora():
+    acervo = Acervo()
+    proc = acervo.obter_ou_criar(numero_valido())
+    proc.registrar_audiencia(Audiencia(data="2026-10-01", hora="11:40"))
+    proc.registrar_audiencia(Audiencia(data="2026-10-01", hora="09:20"))
+    proc.registrar_audiencia(Audiencia(data="2026-09-30", hora="14:00"))
+    ordenadas = acervo.audiencias_ate(date(2026, 12, 31), hoje=date(2026, 9, 12))
+    assert [(a.data, a.hora) for _, a in ordenadas] == [
+        ("2026-09-30", "14:00"), ("2026-10-01", "09:20"), ("2026-10-01", "11:40"),
+    ]

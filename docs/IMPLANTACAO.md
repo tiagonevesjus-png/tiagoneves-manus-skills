@@ -152,21 +152,58 @@ lá usando o prompt armazenado, que pode ser lido com `list_triggers`.
 
 ## Calendários forenses
 
-`core/calendarios/` traz três perfis prontos e um modelo. Nenhum vem com feriado
-estadual ou municipal, por decisão de projeto: feriado local não é presumido.
+### Confirmados
 
-Enquanto `"confirmado": false`, todo cálculo sai com aviso e permanece marcado
-como estimativa.
+Três calendários já foram levantados nas fontes oficiais em 12/09/2026:
 
-Para confirmar o calendário de um juízo:
+| Arquivo | Fonte | Dias sem expediente em 2026 |
+|---|---|---|
+| `TRT16-sao-luis.json` | iCal institucional do TRT16 | 56 |
+| `TRT16-santa-ines.json` | iCal institucional do TRT16 | 57 |
+| `TJMA-sao-luis.json` | Calendário Forense 2026 do TJMA | 14 locais + nacionais |
 
-1. Copie `MODELO-tribunal-local.json` para, por exemplo, `TRT16.json`.
-2. Preencha `locais` com as datas conferidas no portal do tribunal (data magna do
-   Estado, feriados municipais da comarca, portarias de suspensão de expediente).
-3. Registre em `observacoes` a fonte e a data da consulta.
-4. Só então marque `"confirmado": true`.
+O TRT16 publica o ano inteiro em iCal, com abrangência por município.
+`tools/importar_calendario_trt16.py` lê essa fonte e gera o arquivo:
 
-Refaça isso a cada início de ano judiciário.
+```bash
+python3 tools/importar_calendario_trt16.py --ano 2027 --municipio "São Luís"
+```
+
+O TJMA publica em imagens mensais, então a transcrição é manual.
+
+### Por que isso não podia ser presumido
+
+O levantamento provou o ponto. Em 2026 os dois tribunais **divergem** em três
+feriados, por transferência de data:
+
+| Feriado | TRT16 | TJMA |
+|---|---|---|
+| Adesão do Maranhão à Independência | 27/07 | 28/07 |
+| Dia do Advogado | 10/08 | 11/08 |
+| Dia do Servidor Público | 30/10 | 28/10 |
+
+E dentro do próprio TRT16, comarcas divergem: Santa Inês não trabalha em 21/01
+(Padroeira) e 14/03 (Emancipação), datas em que São Luís trabalha; São Luís não
+trabalha em 08/09 (fundação da cidade), data em que Santa Inês trabalha.
+
+Um calendário usado no lugar do outro produz prazo errado. Por isso cada
+processo do acervo aponta para o calendário do seu juízo, e não para um genérico.
+
+### Ainda pendentes
+
+- **Paço do Lumiar** (TJMA). Há audiência designada nessa comarca em 01/10/2026 e
+  o calendário não foi confirmado. Fonte: calendário de feriados das comarcas
+  publicado pelo TJMA.
+- **2027**, em todos os calendários. O motor avisa quando um prazo termina em ano
+  sem feriado local cadastrado, mas o aviso não substitui o cadastro. Regenere no
+  início do ano judiciário.
+
+### Para acrescentar um juízo novo
+
+1. Justiça do Trabalho da 16ª: rode o importador com `--municipio`.
+2. Outros: copie `MODELO-tribunal-local.json`, preencha `locais` com datas
+   conferidas, registre a fonte em `_fonte` e a data em `_consultado_em`, e só
+   então marque `"confirmado": true`.
 
 ## Ordem sugerida de partida
 

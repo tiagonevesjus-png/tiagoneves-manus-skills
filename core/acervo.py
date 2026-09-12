@@ -55,6 +55,28 @@ class Prazo:
 
 
 @dataclass
+class Audiencia:
+    """Audiência designada.
+
+    Não é prazo: tem data e hora certas, definidas pelo juízo, e não se calcula.
+    Por isso vive em campo próprio, e não em `Prazo`.
+    """
+
+    data: str                    # AAAA-MM-DD
+    hora: str = ""               # HH:MM
+    tipo: str = ""               # una, instrução, conciliação, justificação
+    local: str = ""              # sala, fórum, ou link se telepresencial
+    modalidade: str = "presencial"   # presencial, telepresencial, híbrida
+    observacoes: str = ""
+    id_evento_agenda: str = ""
+    confirmada_por_humano: bool = False
+
+    def quando(self) -> str:
+        d = date.fromisoformat(self.data)
+        return f"{d:%d/%m/%Y}" + (f" às {self.hora}" if self.hora else "")
+
+
+@dataclass
 class Processo:
     numero: str                  # número CNJ formatado
     orgao: str = ""
@@ -68,10 +90,27 @@ class Processo:
     situacao: str = "ativo"
     movimentos: list[Movimento] = field(default_factory=list)
     prazos: list[Prazo] = field(default_factory=list)
+    audiencias: list[Audiencia] = field(default_factory=list)
     atualizado_em: str = ""
 
     def prazos_abertos(self) -> list[Prazo]:
         return [p for p in self.prazos if p.status == "aberto"]
+
+    def audiencias_futuras(self, hoje: date | None = None) -> list[Audiencia]:
+        ref = hoje or date.today()
+        return sorted(
+            (a for a in self.audiencias if date.fromisoformat(a.data) >= ref),
+            key=lambda a: (a.data, a.hora),
+        )
+
+    def registrar_audiencia(self, aud: Audiencia) -> bool:
+        """Adiciona a audiência se não houver outra na mesma data e hora."""
+        if any(a.data == aud.data and a.hora == aud.hora for a in self.audiencias):
+            return False
+        self.audiencias.append(aud)
+        self.audiencias.sort(key=lambda a: (a.data, a.hora))
+        self.atualizado_em = datetime.now().isoformat(timespec="seconds")
+        return True
 
     def proximo_vencimento(self) -> str | None:
         abertos = sorted(p.vencimento_estimado for p in self.prazos_abertos())
@@ -116,7 +155,10 @@ class Acervo:
         for numero, bruto in dados.get("processos", {}).items():
             movs = [Movimento(**m) for m in bruto.pop("movimentos", [])]
             prazos = [Prazo(**z) for z in bruto.pop("prazos", [])]
-            processos[numero] = Processo(**bruto, movimentos=movs, prazos=prazos)
+            auds = [Audiencia(**a) for a in bruto.pop("audiencias", [])]
+            processos[numero] = Processo(
+                **bruto, movimentos=movs, prazos=prazos, audiencias=auds
+            )
         return cls(processos=processos, atualizado_em=dados.get("atualizado_em", ""))
 
     def salvar(self, caminho: Path | str = ARQUIVO_PADRAO) -> Path:
@@ -149,6 +191,17 @@ class Acervo:
             if date.fromisoformat(prz.vencimento_estimado) <= limite
         ]
         return sorted(saida, key=lambda t: t[1].vencimento_estimado)
+
+    def audiencias_ate(self, limite: date, hoje: date | None = None) -> list[tuple[Processo, Audiencia]]:
+        """Audiências designadas de hoje até a data indicada, ordenadas."""
+        ref = hoje or date.today()
+        saida = [
+            (proc, aud)
+            for proc in self.processos.values()
+            for aud in proc.audiencias
+            if ref <= date.fromisoformat(aud.data) <= limite
+        ]
+        return sorted(saida, key=lambda t: (t[1].data, t[1].hora))
 
     def nao_conferidos(self) -> list[tuple[Processo, Prazo]]:
         """Prazos em aberto que ainda não passaram por conferência humana."""

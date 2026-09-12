@@ -114,6 +114,8 @@ class Calendario:
     locais: dict[str, str] = field(default_factory=dict)  # "AAAA-MM-DD" -> descrição
     confirmado: bool = False
     observacoes: str = ""
+    fonte: str = ""            # de onde vieram as datas
+    consultado_em: str = ""    # AAAA-MM-DD da consulta à fonte
 
     @classmethod
     def carregar(cls, chave: str) -> "Calendario":
@@ -124,7 +126,12 @@ class Calendario:
                 f"Calendário '{chave}' não encontrado. Disponíveis: {disponiveis}"
             )
         dados = json.loads(caminho.read_text(encoding="utf-8"))
-        dados.pop("_comentario", None)
+        # Chaves com underscore são metadados do arquivo. Proveniência é
+        # preservada; o resto é comentário e se descarta.
+        dados["fonte"] = dados.pop("_fonte", "")
+        dados["consultado_em"] = dados.pop("_consultado_em", "")
+        for chave_meta in [k for k in dados if k.startswith("_")]:
+            dados.pop(chave_meta)
         if "considerar_moveis" in dados:
             dados["considerar_moveis"] = tuple(dados["considerar_moveis"])
         return cls(**dados)
@@ -166,7 +173,11 @@ class Calendario:
             atual += timedelta(days=1)
         raise RuntimeError(f"Nenhum dia útil encontrado a partir de {dia}")
 
-    def avisos(self) -> list[str]:
+    def anos_cobertos(self) -> set[int]:
+        """Anos para os quais há feriado local cadastrado."""
+        return {date.fromisoformat(iso).year for iso in self.locais}
+
+    def avisos(self, ano: int | None = None) -> list[str]:
         av: list[str] = []
         if not self.confirmado:
             av.append(
@@ -178,6 +189,18 @@ class Calendario:
             av.append(
                 "Nenhum feriado local cadastrado neste calendário. Feriados estaduais e "
                 "municipais não são presumidos pelo sistema."
+            )
+        elif ano is not None and ano not in self.anos_cobertos():
+            av.append(
+                f"O calendário '{self.nome}' não cobre o ano de {ano} "
+                f"(anos cadastrados: {sorted(self.anos_cobertos())}). Os feriados locais "
+                f"de {ano} estão AUSENTES do cálculo. Regenere o calendário antes de "
+                "confiar nesta data."
+            )
+        if self.fonte:
+            av.append(
+                f"Fonte do calendário: {self.fonte}"
+                + (f" (consultado em {self.consultado_em})" if self.consultado_em else "")
             )
         if self.observacoes:
             av.append(self.observacoes)
