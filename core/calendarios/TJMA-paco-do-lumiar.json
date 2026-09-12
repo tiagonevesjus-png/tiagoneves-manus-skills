@@ -1,0 +1,25 @@
+{
+  "_comentario": "PARCIAL. Traz apenas as datas do Calendário Forense do TJMA, que valem para todas as comarcas. Os feriados MUNICIPAIS de Paço do Lumiar NÃO foram confirmados e estão ausentes. Por isso 'confirmado' é false.",
+  "_fonte": "https://www.tjma.jus.br/midia/tj/calendario-forense/titulo-calendario/432875 (Calendário Forense 2026 do TJMA, datas de abrangência geral)",
+  "_consultado_em": "2026-09-12",
+  "nome": "TJMA — Comarca de Paço do Lumiar (2026, PARCIAL)",
+  "justica_federal": false,
+  "aplicar_recesso": true,
+  "considerar_moveis": [],
+  "locais": {
+    "2026-02-16": "Segunda-feira de Carnaval",
+    "2026-02-17": "Terça-feira de Carnaval",
+    "2026-02-18": "Quarta-feira de Cinzas",
+    "2026-04-01": "Quarta-feira da Semana Santa",
+    "2026-04-02": "Quinta-feira da Semana Santa",
+    "2026-04-03": "Sexta-feira da Paixão",
+    "2026-06-04": "Corpus Christi",
+    "2026-06-05": "Dia do meio ambiente (sem expediente conforme calendário forense)",
+    "2026-07-28": "Adesão do Maranhão à Independência do Brasil (data magna do Estado)",
+    "2026-08-11": "Dia do Advogado",
+    "2026-10-28": "Dia do Servidor Público",
+    "2026-12-08": "Dia da Justiça"
+  },
+  "confirmado": false,
+  "observacoes": "FALTAM OS FERIADOS MUNICIPAIS DE PAÇO DO LUMIAR. As datas acima são as de abrangência geral do TJMA; foram deliberadamente excluídas as duas municipais de São Luís (29/06 São Pedro e 08/09 Fundação da Cidade), que não valem nesta comarca. Feriado municipal ausente ENCURTA o prazo estimado, o que é o erro na direção segura, mas continua erro: confirme na Lei Orgânica do Município e nas portarias do TJMA antes de agendar. Verifique também a página de Suspensão de Expediente do 1º Grau do TJMA, onde a Corregedoria publica suspensões excepcionais por comarca."
+}
