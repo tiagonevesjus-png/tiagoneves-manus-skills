@@ -2,9 +2,11 @@ name: Testes
 
 # O motor de prazos é a peça de que tudo depende. Uma alteração que quebre a
 # contagem não pode chegar à main sem que alguém veja.
+# Push só na main; nos demais branches quem dispara é o pull_request. Cobrir os
+# dois em todo branch faria cada push rodar a suíte duas vezes.
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   workflow_dispatch:
 
