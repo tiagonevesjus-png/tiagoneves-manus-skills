@@ -63,43 +63,66 @@ imediato aparente.
 
 ## Formato do relatório
 
+O relatório **não é escrito à mão**. Monte o objeto `Dashboard` e deixe o
+renderizador cuidar da apresentação, para que todo dia saia igual:
+
+```python
+from datetime import date
+from core.dashboard_html import (
+    Dashboard, Item, Compromisso, render_html, render_texto, render_pagina,
+)
+
+dash = Dashboard(
+    data=date.today(),
+    resumo="Duas ou três frases sobre o que realmente importa hoje. Sem enrolação.",
+    itens=[
+        Item(
+            urgencia="vermelho",               # vermelho, amarelo ou verde
+            titulo="...",
+            processo="...", cliente="...", orgao="...",
+            o_que_houve="...", providencia="...",
+            vencimento_estimado="2026-09-28",  # opcional, AAAA-MM-DD
+            alerta="...",                      # destaque, quando houver risco nomeado
+            fontes=["e-mail de X", "agenda"],
+        ),
+    ],
+    agenda=[Compromisso(quando="Hoje, 09:00", titulo="...", detalhe="...", alerta="...")],
+    pendentes_conferencia=["..."],
+    pendencias_sistema=["..."],
+    fontes_varredura=["Gmail, últimas 24h, N mensagens", "Google Agenda, DD/MM a DD/MM"],
+)
 ```
-DASHBOARD JURÍDICO DIÁRIO — [dia da semana], [DD] de [mês] de [AAAA]
-Tiago Neves Advocacia Empresarial
 
-RESUMO
-[Duas ou três frases sobre o que realmente importa hoje. Sem enrolação.]
+O renderizador cuida sozinho da faixa institucional em azul-marinho e dourado,
+do placar por urgência, dos cartões com faixa colorida, do selo de vencimento
+com a ressalva de conferência, dos blocos de agenda e de pendência, do aviso de
+estimativa e do rodapé com o advogado e a OAB. A identidade visual vem de
+`core/identidade.py`, a mesma que a planilha usa.
 
-🔴 AÇÃO HOJE
-[Item] | Processo [CNJ] | [Cliente]
-   O que houve: ...
-   Providência: ...
-   Vencimento estimado: [data] — CONFERIR NO SISTEMA
-   Fontes: [e-mail de X / agenda / acervo]
+O campo `urgencia` aceita apenas `vermelho`, `amarelo` ou `verde`, e recusa
+qualquer outro valor. O placar do topo conta sozinho.
 
-🟡 ESTA SEMANA
-[mesmo formato]
+Três saídas, do mesmo objeto:
 
-🟢 ACOMPANHAMENTO
-[formato reduzido, uma linha por item]
-
-AGENDA
-Hoje: [horário] — [compromisso]
-Amanhã: [horário] — [compromisso]
-
-PENDENTES DE CONFERÊNCIA
-[Prazos estimados que ainda não foram validados por humano. Lista sempre
-presente, mesmo vazia.]
-
-NOVOS PROCESSOS DETECTADOS
-[Números CNJ vistos em e-mail e ausentes do acervo, com sugestão de cadastro.]
-```
+| Função | Para quê |
+|---|---|
+| `render_html(dash)` | corpo do e-mail, seguro para cliente de e-mail |
+| `render_texto(dash)` | alternativa em texto puro do mesmo e-mail |
+| `render_pagina(dash)` | documento HTML autônomo, para arquivo ou impressão |
 
 ## Entrega
 
 Crie **rascunho** no Gmail com `create_draft`, destinatário
-`tiagoneves.jus@gmail.com`, assunto `Dashboard Jurídico — DD/MM/AAAA`. Nunca
-envie automaticamente: o advogado revisa e dispara.
+`tiagoneves.jus@gmail.com`, assunto `Dashboard Jurídico — DD/MM/AAAA`, passando:
+
+- `htmlBody` com a saída de `render_html(dash)`
+- `body` com a saída de `render_texto(dash)`, que é a alternativa em texto puro
+  e o que aparece na pré-visualização da caixa
+
+Nunca envie automaticamente: o advogado revisa e dispara.
+
+Salve também `render_pagina(dash)` em `saida/dashboard-AAAA-MM-DD.html`, que abre
+no navegador e imprime limpo.
 
 Se a execução veio de Routine agendada, informe ao final quantos itens de cada
 cor foram encontrados, para que a notificação seja útil sem abrir o rascunho.

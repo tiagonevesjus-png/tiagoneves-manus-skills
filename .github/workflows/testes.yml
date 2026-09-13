@@ -34,7 +34,7 @@ jobs:
       - name: Rodar os testes
         run: python -m pytest tests/ -q
 
-      - name: Conferir que a planilha e os filtros ainda são gerados
+      - name: Conferir que os filtros ainda são gerados
         run: |
           python tools/gerar_filtros_gmail.py --saida /tmp/filtros.xml
           python -c "
@@ -42,3 +42,6 @@ jobs:
           ET.parse('/tmp/filtros.xml')
           print('XML de filtros válido')
           "
+
+      - name: Conferir que o dashboard ainda renderiza
+        run: python tools/exemplo_dashboard.py --saida /tmp/exemplo-dashboard.html

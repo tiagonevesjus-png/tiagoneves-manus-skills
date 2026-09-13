@@ -41,6 +41,9 @@ de prazos com base legal conferida na fonte oficial.
 - **`acervo.py`** — processos, movimentos, prazos e audiências, com desduplicação.
 - **`planilha.py`** — planilha de controle em xlsx, cinco abas.
 - **`filtros_gmail.py`** — filtros nativos do Gmail para a taxonomia TNADV.
+- **`identidade.py`** — cores, tipografia e dados do escritório, em fonte única.
+- **`dashboard_html.py`** — modelo e renderização do dashboard diário, em HTML
+  que sobrevive a cliente de e-mail e imprime limpo.
 
 ## Três premissas de projeto
 
@@ -63,6 +66,7 @@ python3 -m pytest tests/ -q
 python3 tools/gerar_planilha.py --saida "saida/controle.xlsx"
 python3 tools/gerar_filtros_gmail.py --saida "saida/filtros.xml"
 python3 tools/importar_calendario_trt16.py --ano 2027 --municipio "São Luís"
+python3 tools/exemplo_dashboard.py --saida "saida/exemplo-dashboard.html"
 ```
 
 Os testes rodam também no CI, a cada push e em todo pull request.

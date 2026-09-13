@@ -18,16 +18,21 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from .acervo import Acervo, classificar_urgencia
+from . import identidade
 
-AZUL_MARINHO = "1B2A4A"
-DOURADO = "C6A15B"
-BRANCO = "FFFFFF"
-CINZA_CLARO = "F2F4F7"
+# openpyxl quer a cor sem o "#". A identidade do escritório vive em
+# core/identidade.py; aqui só se converte o formato.
+def _hex(cor: str) -> str:
+    return cor.lstrip("#").upper()
+
+
+AZUL_MARINHO = _hex(identidade.AZUL_MARINHO)
+DOURADO = _hex(identidade.DOURADO)
+BRANCO = _hex(identidade.BRANCO)
+CINZA_CLARO = _hex(identidade.PAPEL)
 
 CORES_URGENCIA = {
-    "vermelho": "F8D7DA",
-    "amarelo": "FFF3CD",
-    "verde": "D4EDDA",
+    nivel: _hex(cores["fundo"]) for nivel, cores in identidade.URGENCIA.items()
 }
 
 BORDA = Border(*(Side(style="thin", color="D0D5DD"),) * 4)
