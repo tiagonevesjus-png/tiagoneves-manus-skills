@@ -79,10 +79,19 @@ class Item:
 
 @dataclass
 class Compromisso:
+    """Um compromisso da agenda.
+
+    `quando` é o que se lê na tela. `data` é o que a máquina usa para separar o
+    que é de hoje do que vem depois, e por isso precisa vir preenchida sempre
+    que a fonte informar a data. Compromisso sem `data` nunca é presumido de
+    hoje: cai na lista adiante e é contado à parte, para que a omissão apareça.
+    """
+
     quando: str
     titulo: str
     detalhe: str = ""
     alerta: str = ""
+    data: date | None = None
 
 
 @dataclass
@@ -103,6 +112,22 @@ class Dashboard:
 
     def contagem(self) -> dict[str, int]:
         return {n: len(self.por_urgencia(n)) for n in URGENCIA}
+
+    def agenda_do_dia(self) -> list[Compromisso]:
+        """Compromissos cuja data é a do dashboard."""
+        return [c for c in self.agenda if c.data == self.data]
+
+    def agenda_adiante(self) -> list[Compromisso]:
+        """O resto da janela examinada, inclusive o que veio sem data."""
+        return [c for c in self.agenda if c.data != self.data]
+
+    def agenda_sem_data(self) -> list[Compromisso]:
+        return [c for c in self.agenda if c.data is None]
+
+    def vencimentos_do_dia(self) -> list[Item]:
+        """Itens cujo vencimento estimado cai hoje. Continua sendo estimativa."""
+        alvo = self.data.isoformat()
+        return [i for i in self.itens if i.vencimento_estimado == alvo]
 
 
 # --- Auxiliares de marcação ------------------------------------------------
@@ -218,37 +243,120 @@ def _bloco_lista(titulo: str, itens: list[str], cor_borda: str, fundo: str) -> s
     )
 
 
+def _linha_agenda(
+    quando: str,
+    titulo: str,
+    detalhe: str = "",
+    alerta: str = "",
+    cor_quando: str = AZUL_MARINHO,
+    ultima: bool = False,
+) -> str:
+    # A régua da última linha encostaria na borda do cartão, virando linha dupla.
+    risco = "none" if ultima else f"1px solid {CINZA_BORDA}"
+    bloco_detalhe = (
+        f'<div style="margin:3px 0 0;font:400 12px/1.5 {SANS};'
+        f'color:{CINZA_TEXTO};">{_e(detalhe)}</div>' if detalhe else ""
+    )
+    bloco_alerta = (
+        f'<div style="margin:6px 0 0;font:600 12px/1.5 {SANS};color:#7A271A;">'
+        f'{_e(alerta)}</div>' if alerta else ""
+    )
+    return (
+        f'<tr>'
+        f'<td width="120" style="padding:10px 12px 10px 0;font:700 12px/1.4 {SANS};'
+        f'color:{cor_quando};vertical-align:top;white-space:nowrap;'
+        f'border-bottom:{risco};">{_e(quando)}</td>'
+        f'<td style="padding:10px 0;border-bottom:{risco};">'
+        f'<div style="font:600 13px/1.4 {SANS};color:{GRAFITE};">{_e(titulo)}</div>'
+        f'{bloco_detalhe}{bloco_alerta}</td>'
+        f'</tr>'
+    )
+
+
+def _vazio(texto: str) -> str:
+    return (
+        f'<div style="font:400 13px/1.55 {SANS};color:{CINZA_TEXTO};'
+        f'padding:4px 0 8px;">{_e(texto)}</div>'
+    )
+
+
+def _bloco_agenda_do_dia(dash: Dashboard) -> str:
+    """Bloco de destaque com o que o dia exige, logo abaixo do resumo.
+
+    Reúne duas coisas que o advogado precisa ver antes de qualquer outra: os
+    compromissos marcados para hoje e os prazos cuja estimativa vence hoje.
+    Prazo entra sempre com a ressalva de conferência, porque continua sendo
+    estimativa mesmo quando cai no dia.
+    """
+    # (quando, título, detalhe, alerta, cor do rótulo)
+    entradas: list[tuple[str, str, str, str, str]] = [
+        (c.quando, c.titulo, c.detalhe, c.alerta, AZUL_MARINHO)
+        for c in dash.agenda_do_dia()
+    ]
+    for item in dash.vencimentos_do_dia():
+        partes = [p for p in (item.processo, item.providencia) if p]
+        entradas.append((
+            "Prazo estimado",
+            item.titulo,
+            "  ·  ".join(partes),
+            "Vencimento estimado para hoje. CONFERIR NO SISTEMA.",
+            URGENCIA["vermelho"]["faixa"],
+        ))
+
+    linhas = [
+        _linha_agenda(*e, ultima=(n == len(entradas) - 1))
+        for n, e in enumerate(entradas)
+    ]
+
+    if linhas:
+        miolo = (
+            f'<table role="presentation" width="100%" cellpadding="0" '
+            f'cellspacing="0" border="0" style="border-collapse:collapse;">'
+            f'{"".join(linhas)}</table>'
+        )
+    else:
+        miolo = _vazio("Nenhum compromisso nem prazo estimado para hoje.")
+
+    sem_data = len(dash.agenda_sem_data())
+    if sem_data:
+        plural = "s" if sem_data > 1 else ""
+        miolo += (
+            f'<div style="margin:8px 0 0;font:400 11px/1.5 {SANS};'
+            f'color:{CINZA_TEXTO};">{sem_data} compromisso{plural} sem data '
+            f'confirmada na fonte. Aparece{"m" if sem_data > 1 else ""} apenas '
+            f'em Próximos compromissos, e não foi presumido de hoje.</div>'
+        )
+
+    return (
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'border="0" style="border-collapse:collapse;margin:0 0 6px;">'
+        f'<tr><td style="background:{AZUL_MARINHO};padding:11px 16px 10px;">'
+        f'<div style="font:700 12px/1.2 {SANS};letter-spacing:.14em;'
+        f'color:{DOURADO_CLARO};text-transform:uppercase;">Agenda do dia</div>'
+        f'<div style="margin:4px 0 0;font:400 12px/1.4 {SANS};color:{BRANCO};">'
+        f'{_e(data_por_extenso(dash.data))}</div>'
+        f'</td></tr>'
+        f'<tr><td style="background:{DOURADO};height:2px;font-size:0;'
+        f'line-height:0;">&nbsp;</td></tr>'
+        f'<tr><td style="background:{BRANCO};border:1px solid {CINZA_BORDA};'
+        f'border-top:0;padding:6px 16px 12px;">{miolo}</td></tr>'
+        f'</table>'
+    )
+
+
 def _bloco_agenda(compromissos: list[Compromisso]) -> str:
     if not compromissos:
-        return (
-            f'<div style="font:400 13px/1.55 {SANS};color:{CINZA_TEXTO};'
-            f'padding:4px 0 8px;">Nenhum compromisso na janela examinada.</div>'
-        )
-    linhas = []
-    for c in compromissos:
-        alerta = (
-            f'<div style="margin:6px 0 0;font:600 12px/1.5 {SANS};color:#7A271A;">'
-            f'{_e(c.alerta)}</div>' if c.alerta else ""
-        )
-        detalhe = (
-            f'<div style="margin:3px 0 0;font:400 12px/1.5 {SANS};'
-            f'color:{CINZA_TEXTO};">{_e(c.detalhe)}</div>' if c.detalhe else ""
-        )
-        linhas.append(
-            f'<tr>'
-            f'<td width="120" style="padding:10px 12px 10px 0;font:700 12px/1.4 {SANS};'
-            f'color:{AZUL_MARINHO};vertical-align:top;white-space:nowrap;'
-            f'border-bottom:1px solid {CINZA_BORDA};">{_e(c.quando)}</td>'
-            f'<td style="padding:10px 0;border-bottom:1px solid {CINZA_BORDA};">'
-            f'<div style="font:600 13px/1.4 {SANS};color:{GRAFITE};">{_e(c.titulo)}</div>'
-            f'{detalhe}{alerta}</td>'
-            f'</tr>'
-        )
+        return _vazio("Nenhum compromisso na janela examinada.")
+    linhas = "".join(
+        _linha_agenda(c.quando, c.titulo, c.detalhe, c.alerta,
+                      ultima=(n == len(compromissos) - 1))
+        for n, c in enumerate(compromissos)
+    )
     return (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'border="0" style="border-collapse:collapse;background:{BRANCO};'
         f'border:1px solid {CINZA_BORDA};padding:0 16px;">'
-        f'{"".join(linhas)}</table>'
+        f'{linhas}</table>'
     )
 
 
@@ -315,6 +423,9 @@ def render_html(dash: Dashboard) -> str:
             f'</tr></table>'
         )
 
+    # A agenda do dia vem antes dos cartões: é o que decide a manhã.
+    corpo.append(_bloco_agenda_do_dia(dash))
+
     for nivel in ("vermelho", "amarelo", "verde"):
         itens = dash.por_urgencia(nivel)
         if not itens:
@@ -322,8 +433,8 @@ def render_html(dash: Dashboard) -> str:
         corpo.append(_titulo_secao(URGENCIA[nivel]["rotulo"], URGENCIA[nivel]["faixa"]))
         corpo.extend(_cartao_item(i) for i in itens)
 
-    corpo.append(_titulo_secao("Agenda", AZUL_MARINHO))
-    corpo.append(_bloco_agenda(dash.agenda))
+    corpo.append(_titulo_secao("Próximos compromissos", AZUL_MARINHO))
+    corpo.append(_bloco_agenda(dash.agenda_adiante()))
 
     if dash.pendentes_conferencia:
         corpo.append(_titulo_secao("Pendentes de conferência", DOURADO))
@@ -418,6 +529,35 @@ def render_texto(dash: Dashboard) -> str:
     )
     l += ["", dash.resumo, ""]
 
+    l += ["=" * 62, f"AGENDA DO DIA — {data_por_extenso(dash.data)}", "=" * 62, ""]
+    do_dia = dash.agenda_do_dia()
+    vencendo = dash.vencimentos_do_dia()
+    for comp in do_dia:
+        l.append(f"{comp.quando} — {comp.titulo}")
+        if comp.detalhe:
+            l.append(f"   {comp.detalhe}")
+        if comp.alerta:
+            l.append(f"   ATENÇÃO: {comp.alerta}")
+        l.append("")
+    for item in vencendo:
+        l.append(f"Prazo estimado — {item.titulo}")
+        if item.processo:
+            l.append(f"   Processo: {item.processo}")
+        if item.providencia:
+            l.append(f"   Providência: {item.providencia}")
+        l.append("   Vencimento estimado para hoje. CONFERIR NO SISTEMA.")
+        l.append("")
+    if not do_dia and not vencendo:
+        l += ["Nenhum compromisso nem prazo estimado para hoje.", ""]
+    sem_data = len(dash.agenda_sem_data())
+    if sem_data:
+        plural = "s" if sem_data > 1 else ""
+        l += [
+            f"{sem_data} compromisso{plural} sem data confirmada na fonte, "
+            f"listado{plural} apenas em Próximos compromissos.",
+            "",
+        ]
+
     for nivel in ("vermelho", "amarelo", "verde"):
         itens = dash.por_urgencia(nivel)
         if not itens:
@@ -441,9 +581,10 @@ def render_texto(dash: Dashboard) -> str:
                 l.append(f"   Fontes: {'  ·  '.join(item.fontes)}")
             l.append("")
 
-    l += ["=" * 62, "AGENDA", "=" * 62, ""]
-    if dash.agenda:
-        for comp in dash.agenda:
+    l += ["=" * 62, "PRÓXIMOS COMPROMISSOS", "=" * 62, ""]
+    adiante = dash.agenda_adiante()
+    if adiante:
+        for comp in adiante:
             l.append(f"{comp.quando} — {comp.titulo}")
             if comp.detalhe:
                 l.append(f"   {comp.detalhe}")

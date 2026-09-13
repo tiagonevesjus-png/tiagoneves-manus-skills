@@ -32,6 +32,11 @@ Para cada mensagem relevante, extraia: remetente, assunto, número CNJ (use
 amanhã 23h59. Separe audiências, reuniões e lembretes de prazo. O calendário
 Todoist sincronizado também entra: tarefas com data caem ali.
 
+Ao montar cada `Compromisso`, preencha `data` com a data do evento. É o que
+separa o bloco AGENDA DO DIA do restante da janela. Compromisso sem `data` não
+é presumido de hoje: cai em Próximos compromissos e o bloco do dia registra
+quantos ficaram sem data, para que a omissão apareça em vez de sumir.
+
 ### 3. Acervo processual
 
 Carregue `data/acervo.json` com `core.acervo.Acervo.carregar()`. Liste:
@@ -86,7 +91,10 @@ dash = Dashboard(
             fontes=["e-mail de X", "agenda"],
         ),
     ],
-    agenda=[Compromisso(quando="Hoje, 09:00", titulo="...", detalhe="...", alerta="...")],
+    agenda=[
+        Compromisso(quando="Hoje, 09:00", titulo="...", detalhe="...", alerta="...",
+                    data=date(2026, 9, 14)),   # sempre que a fonte informar a data
+    ],
     pendentes_conferencia=["..."],
     pendencias_sistema=["..."],
     fontes_varredura=["Gmail, últimas 24h, N mensagens", "Google Agenda, DD/MM a DD/MM"],
@@ -98,6 +106,22 @@ do placar por urgência, dos cartões com faixa colorida, do selo de vencimento
 com a ressalva de conferência, dos blocos de agenda e de pendência, do aviso de
 estimativa e do rodapé com o advogado e a OAB. A identidade visual vem de
 `core/identidade.py`, a mesma que a planilha usa.
+
+### Bloco AGENDA DO DIA
+
+Logo abaixo do resumo, antes dos cartões de urgência, o renderizador monta
+sozinho o bloco **AGENDA DO DIA**. Ele reúne, em ordem:
+
+1. os compromissos cuja `data` é a do dashboard;
+2. os itens cujo `vencimento_estimado` cai no mesmo dia, marcados como prazo e
+   sempre com "Vencimento estimado para hoje. CONFERIR NO SISTEMA".
+
+Dia sem nada registrado imprime "Nenhum compromisso nem prazo estimado para
+hoje", que é resultado legítimo. Nada aqui é montado à mão: o bloco deriva de
+`dash.agenda_do_dia()` e `dash.vencimentos_do_dia()`.
+
+O que sobra da janela vai para a seção **Próximos compromissos**, mais abaixo,
+sem repetir o que já apareceu no bloco do dia.
 
 O campo `urgencia` aceita apenas `vermelho`, `amarelo` ou `verde`, e recusa
 qualquer outro valor. O placar do topo conta sozinho.

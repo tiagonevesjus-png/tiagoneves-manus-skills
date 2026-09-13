@@ -51,7 +51,10 @@ def dash() -> Dashboard:
         ],
         agenda=[
             Compromisso(quando="Hoje, 09:00", titulo="Reunião",
-                        detalhe="Pauta pendente", alerta="Data divergente"),
+                        detalhe="Pauta pendente", alerta="Data divergente",
+                        data=date(2026, 9, 14)),
+            Compromisso(quando="Amanhã, 14:30", titulo="Audiência de instrução",
+                        data=date(2026, 9, 15)),
         ],
         pendentes_conferencia=["Nenhum prazo cadastrado no acervo."],
         pendencias_sistema=["Comarca sem calendário confirmado."],
@@ -130,6 +133,67 @@ def test_aviso_de_estimativa_esta_presente_nas_tres_saidas(dash):
 def test_alerta_do_item_aparece(dash):
     html = render_html(dash)
     assert "art. 20" in html
+
+
+# --- Agenda do dia ---------------------------------------------------------
+
+
+def test_agenda_do_dia_separa_hoje_do_que_vem_depois(dash):
+    assert [c.titulo for c in dash.agenda_do_dia()] == ["Reunião"]
+    assert [c.titulo for c in dash.agenda_adiante()] == ["Audiência de instrução"]
+
+
+def test_bloco_do_dia_vem_antes_dos_cartoes_de_urgencia(dash):
+    """O dia é a primeira coisa que se lê, depois do resumo."""
+    html = render_html(dash)
+    assert html.index("Agenda do dia") < html.index("Conflito de audiências")
+    assert html.index("Agenda do dia") < html.index("Próximos compromissos")
+
+
+def test_compromisso_de_hoje_nao_se_repete_em_proximos(dash):
+    html = render_html(dash)
+    assert html.count("Reunião") == 1
+    assert html.count("Audiência de instrução") == 1
+
+
+def test_prazo_que_vence_hoje_entra_na_agenda_do_dia_com_ressalva():
+    d = Dashboard(
+        data=date(2026, 9, 28),
+        resumo="Prazo estimado vencendo.",
+        itens=[Item(urgencia="vermelho", titulo="Redesignação de audiência",
+                    processo="0801774-18.2026.8.10.0050",
+                    providencia="Protocolar pedido.",
+                    vencimento_estimado="2026-09-28")],
+    )
+    assert [i.titulo for i in d.vencimentos_do_dia()] == ["Redesignação de audiência"]
+    for saida in (render_html(d), render_texto(d)):
+        assert "Vencimento estimado para hoje" in saida
+        assert "CONFERIR NO SISTEMA" in saida
+
+
+def test_prazo_de_outro_dia_nao_aparece_na_agenda_do_dia(dash):
+    """O único vencimento é 28/09, e o dashboard é de 14/09."""
+    assert dash.vencimentos_do_dia() == []
+    assert "Vencimento estimado para hoje" not in render_html(dash)
+
+
+def test_compromisso_sem_data_nao_e_presumido_de_hoje():
+    d = Dashboard(
+        data=date(2026, 9, 14),
+        resumo="Agenda incompleta.",
+        agenda=[Compromisso(quando="Hoje, 09:00", titulo="Reunião sem data na fonte")],
+    )
+    assert d.agenda_do_dia() == []
+    assert len(d.agenda_adiante()) == 1
+    for saida in (render_html(d), render_texto(d)):
+        assert "Nenhum compromisso nem prazo estimado para hoje" in saida
+        assert "sem data confirmada na fonte" in saida
+
+
+def test_agenda_do_dia_aparece_nas_tres_saidas(dash):
+    for saida in (render_html(dash), render_pagina(dash)):
+        assert "Agenda do dia" in saida
+    assert "AGENDA DO DIA" in render_texto(dash)
 
 
 # --- Conteúdo e integridade -----------------------------------------------

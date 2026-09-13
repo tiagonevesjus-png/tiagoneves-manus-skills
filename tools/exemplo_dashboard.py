@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -41,7 +41,7 @@ def exemplo(hoje: date) -> Dashboard:
                 orgao="Juizado Especial Cível de Exemplo",
                 o_que_houve="Duas audiências presenciais em comarcas diferentes.",
                 providencia="Pedir redesignação ou constituir audiencista.",
-                vencimento_estimado=f"{hoje.year}-12-01",
+                vencimento_estimado=hoje.isoformat(),
                 alerta=(
                     "Lei 9.099/1995, art. 20: não comparecendo o demandado, "
                     "reputar-se-ão verdadeiros os fatos alegados no pedido inicial."
@@ -72,6 +72,13 @@ def exemplo(hoje: date) -> Dashboard:
                 titulo="Reunião de exemplo",
                 detalhe="Pauta registrada em mensagem.",
                 alerta="Confirmação de presença pendente.",
+                data=hoje,
+            ),
+            Compromisso(
+                quando="Amanhã, 14:30",
+                titulo="Audiência de instrução de exemplo",
+                detalhe="Comarca de Exemplo, presencial.",
+                data=hoje + timedelta(days=1),
             ),
         ],
         pendentes_conferencia=[

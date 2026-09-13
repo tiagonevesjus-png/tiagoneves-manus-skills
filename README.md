@@ -42,8 +42,9 @@ de prazos com base legal conferida na fonte oficial.
 - **`planilha.py`** — planilha de controle em xlsx, cinco abas.
 - **`filtros_gmail.py`** — filtros nativos do Gmail para a taxonomia TNADV.
 - **`identidade.py`** — cores, tipografia e dados do escritório, em fonte única.
-- **`dashboard_html.py`** — modelo e renderização do dashboard diário, em HTML
-  que sobrevive a cliente de e-mail e imprime limpo.
+- **`dashboard_html.py`** — modelo e renderização do dashboard diário, com o
+  bloco AGENDA DO DIA no topo, em HTML que sobrevive a cliente de e-mail e
+  imprime limpo.
 
 ## Três premissas de projeto
 
