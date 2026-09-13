@@ -1,0 +1,27 @@
+{
+  "_comentario": "Transcrito do Calendário Forense 2026 oficial do TJMA, publicado em imagens mensais. Confira e regenere a cada ano judiciário.",
+  "_fonte": "https://www.tjma.jus.br/midia/tj/calendario-forense/titulo-calendario/432875 (Calendário Forense 2026, imagens mensais 1920x1080)",
+  "_consultado_em": "2026-09-12",
+  "nome": "TJMA — Comarca de São Luís (2026)",
+  "justica_federal": false,
+  "aplicar_recesso": true,
+  "considerar_moveis": [],
+  "locais": {
+    "2026-02-16": "Segunda-feira de Carnaval",
+    "2026-02-17": "Terça-feira de Carnaval",
+    "2026-02-18": "Quarta-feira de Cinzas",
+    "2026-04-01": "Quarta-feira da Semana Santa",
+    "2026-04-02": "Quinta-feira da Semana Santa",
+    "2026-04-03": "Sexta-feira da Paixão",
+    "2026-06-04": "Corpus Christi",
+    "2026-06-05": "Dia do meio ambiente (sem expediente conforme calendário forense)",
+    "2026-06-29": "Dia de São Pedro (feriado municipal de São Luís)",
+    "2026-07-28": "Adesão do Maranhão à Independência do Brasil (data magna do Estado)",
+    "2026-08-11": "Dia do Advogado",
+    "2026-09-08": "Fundação da Cidade de São Luís (feriado municipal)",
+    "2026-10-28": "Dia do Servidor Público",
+    "2026-12-08": "Dia da Justiça"
+  },
+  "confirmado": true,
+  "observacoes": "Vale para a COMARCA DE SÃO LUÍS. Outras comarcas têm feriados municipais próprios: para processo de comarca diversa (Paço do Lumiar, por exemplo), gere calendário separado a partir do calendário de feriados das comarcas publicado pelo TJMA. ATENÇÃO à divergência com o TRT16 em 2026, por transferência de feriado: Adesão do Maranhão em 28/07 no TJMA e 27/07 no TRT16; Dia do Advogado em 11/08 no TJMA e 10/08 no TRT16; Dia do Servidor Público em 28/10 no TJMA e 30/10 no TRT16. Nunca use um calendário no lugar do outro."
+}

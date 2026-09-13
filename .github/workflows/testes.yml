@@ -1,0 +1,47 @@
+name: Testes
+
+# O motor de prazos é a peça de que tudo depende. Uma alteração que quebre a
+# contagem não pode chegar à main sem que alguém veja.
+# Push só na main; nos demais branches quem dispara é o pull_request. Cobrir os
+# dois em todo branch faria cada push rodar a suíte duas vezes.
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    name: pytest (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Rodar os testes
+        run: python -m pytest tests/ -q
+
+      - name: Conferir que os filtros ainda são gerados
+        run: |
+          python tools/gerar_filtros_gmail.py --saida /tmp/filtros.xml
+          python -c "
+          import xml.etree.ElementTree as ET
+          ET.parse('/tmp/filtros.xml')
+          print('XML de filtros válido')
+          "
+
+      - name: Conferir que o dashboard ainda renderiza
+        run: python tools/exemplo_dashboard.py --saida /tmp/exemplo-dashboard.html

@@ -1,0 +1,10 @@
+{
+  "_comentario": "Justiça Estadual. Feriados estaduais e municipais NÃO vêm preenchidos: cadastre-os em 'locais' e só então marque 'confirmado' como true.",
+  "nome": "Justiça Estadual (padrão nacional, sem feriados locais)",
+  "justica_federal": false,
+  "aplicar_recesso": true,
+  "considerar_moveis": ["Segunda-feira de Carnaval", "Terça-feira de Carnaval", "Sexta-feira da Paixão", "Corpus Christi"],
+  "locais": {},
+  "confirmado": false,
+  "observacoes": "Cadastre a data magna do Estado (Lei 9.093/1995, art. 1º, II), os feriados municipais da comarca (art. 2º) e os atos de suspensão de expediente do tribunal."
+}
