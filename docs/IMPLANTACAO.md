@@ -154,13 +154,14 @@ lá usando o prompt armazenado, que pode ser lido com `list_triggers`.
 
 ### Confirmados
 
-Três calendários já foram levantados nas fontes oficiais em 12/09/2026:
+Quatro calendários já foram levantados nas fontes oficiais:
 
-| Arquivo | Fonte | Dias sem expediente em 2026 |
+| Arquivo | Fonte | Cobertura |
 |---|---|---|
-| `TRT16-sao-luis.json` | iCal institucional do TRT16 | 56 |
-| `TRT16-santa-ines.json` | iCal institucional do TRT16 | 57 |
-| `TJMA-sao-luis.json` | Calendário Forense 2026 do TJMA | 14 locais + nacionais |
+| `TRT16-sao-luis.json` | iCal institucional do TRT16 | 2026 |
+| `TRT16-santa-ines.json` | iCal institucional do TRT16 | 2026 |
+| `TJMA-sao-luis.json` | Calendário Forense 2026 do TJMA | 2026 |
+| `TJCE-fortaleza.json` | Portarias TJCE nº 2924/2025 e nº 727/2026 | 2026 e janeiro de 2027 |
 
 O TRT16 publica o ano inteiro em iCal, com abrangência por município.
 `tools/importar_calendario_trt16.py` lê essa fonte e gera o arquivo:
@@ -173,18 +174,34 @@ O TJMA publica em imagens mensais, então a transcrição é manual.
 
 ### Por que isso não podia ser presumido
 
-O levantamento provou o ponto. Em 2026 os dois tribunais **divergem** em três
-feriados, por transferência de data:
+O levantamento provou o ponto. Em 2026 os tribunais **divergem** entre si, por
+transferência de data e por feriado próprio:
 
-| Feriado | TRT16 | TJMA |
-|---|---|---|
-| Adesão do Maranhão à Independência | 27/07 | 28/07 |
-| Dia do Advogado | 10/08 | 11/08 |
-| Dia do Servidor Público | 30/10 | 28/10 |
+| Feriado | TRT16 | TJMA | TJCE |
+|---|---|---|---|
+| Adesão do Maranhão à Independência | 27/07 | 28/07 | trabalha |
+| Dia do Advogado | trabalha | 11/08 | trabalha |
+| Dia do Servidor Público | 30/10 | 28/10 | 28/10 |
+| Quarta-feira da Semana Santa | para | para | trabalha |
+| Data Magna do Ceará (25/03) | trabalha | trabalha | para |
+| Aniversário de Fortaleza (13/04) | trabalha | trabalha | para |
 
-E dentro do próprio TRT16, comarcas divergem: Santa Inês não trabalha em 21/01
-(Padroeira) e 14/03 (Emancipação), datas em que São Luís trabalha; São Luís não
-trabalha em 08/09 (fundação da cidade), data em que Santa Inês trabalha.
+Nenhum dos três trata essas datas do mesmo modo, e há teste travando cada uma.
+
+E dentro do próprio TRT16, comarcas divergem: Santa Inês não trabalha em 21/01,
+dia da Padroeira, quando São Luís trabalha; São Luís não trabalha em 08/09,
+fundação da cidade, quando Santa Inês trabalha.
+
+### Dia parado não é a mesma coisa que dia de expediente reduzido
+
+O TJCE trouxe um caso que o motor passou a modelar: em 18/02/2026, Quarta-feira
+de Cinzas, há ponto facultativo até as 14h e expediente normal a partir daí.
+Não é dia parado.
+
+O art. 224, § 1º, do CPC trata os dois de formas diferentes. Dia de expediente
+reduzido **conta** como dia útil no meio do prazo, e ao mesmo tempo **protrai**
+o dia do começo e o do vencimento. O campo `expediente_reduzido` do calendário
+existe para isso, e o motor emite aviso citando o dispositivo quando prorroga.
 
 Um calendário usado no lugar do outro produz prazo errado. Por isso cada
 processo do acervo aponta para o calendário do seu juízo, e não para um genérico.
@@ -194,9 +211,10 @@ processo do acervo aponta para o calendário do seu juízo, e não para um gené
 - **Paço do Lumiar** (TJMA). Há audiência designada nessa comarca em 01/10/2026 e
   o calendário não foi confirmado. Fonte: calendário de feriados das comarcas
   publicado pelo TJMA.
-- **2027**, em todos os calendários. O motor avisa quando um prazo termina em ano
-  sem feriado local cadastrado, mas o aviso não substitui o cadastro. Regenere no
-  início do ano judiciário.
+- **2027**, salvo o TJCE, que já vem coberto até 06/01/2027 por alcance da
+  própria portaria. O motor avisa quando um prazo termina em ano sem feriado
+  local cadastrado, mas o aviso não substitui o cadastro. Regenere no início do
+  ano judiciário.
 
 ### Para acrescentar um juízo novo
 
@@ -204,6 +222,17 @@ processo do acervo aponta para o calendário do seu juízo, e não para um gené
 2. Outros: copie `MODELO-tribunal-local.json`, preencha `locais` com datas
    conferidas, registre a fonte em `_fonte` e a data em `_consultado_em`, e só
    então marque `"confirmado": true`.
+
+`tests/test_integridade_calendarios.py` roda sobre todos os arquivos do
+diretório e recusa calendário com data malformada, com o mesmo dia marcado como
+parado e reduzido ao mesmo tempo, ou confirmado sem declarar a fonte.
+
+## Integração contínua
+
+`.github/workflows/testes.yml` roda os testes a cada push e em todo pull
+request, em Python 3.11 e 3.12, e confere que os filtros do Gmail continuam
+sendo gerados como XML válido. Antes disso, os testes só rodavam quando alguém
+se lembrava de executá-los.
 
 ## Ordem sugerida de partida
 

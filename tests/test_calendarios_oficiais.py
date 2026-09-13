@@ -15,7 +15,7 @@ from datetime import date
 import pytest
 
 from core.feriados import Calendario
-from core.prazos import Regime, contar_prazo
+from core.prazos import Regime, TermoInicial, contar_prazo
 
 
 @pytest.fixture(scope="module")
@@ -125,3 +125,133 @@ def test_prazo_com_calendario_oficial_nao_avisa_falta_de_confirmacao():
     assert not any("não foi confirmado" in a for a in r.avisos)
     assert any("Fonte do calendário" in a for a in r.avisos)
     assert r.requer_conferencia is True  # continua estimativa, sempre
+
+
+# --------------------------------------------------------------------------
+# TJCE, Comarca de Fortaleza
+# Fonte: Portaria nº 2924/2025 da Presidência do TJCE (feriados de janeiro/2026
+# a janeiro/2027) e Portaria nº 727/2026 (aniversário da cidade de Fortaleza),
+# ambas conferidas em 13/09/2026.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def tjce() -> Calendario:
+    return Calendario.carregar("TJCE-fortaleza")
+
+
+def test_tjce_confirmado_e_com_proveniencia(tjce):
+    assert tjce.confirmado is True
+    assert tjce.fonte.startswith("https://")
+    assert tjce.consultado_em
+
+
+def test_tjce_e_o_unico_que_ja_cobre_2027(tjce, trt16, tjma):
+    assert tjce.anos_cobertos() == {2026, 2027}
+    assert 2027 not in trt16.anos_cobertos()
+    assert 2027 not in tjma.anos_cobertos()
+
+
+def test_tjce_feriados_proprios_do_ceara(tjce):
+    assert not tjce.e_util(date(2026, 3, 19))   # Dia de São José
+    assert not tjce.e_util(date(2026, 3, 25))   # Data Magna do Ceará
+    assert not tjce.e_util(date(2026, 12, 8))   # Dia da Justiça
+
+
+def test_tjce_aniversario_de_fortaleza_e_local(tjce, tjma):
+    """Portaria 727/2026: ponto facultativo só na Comarca de Fortaleza."""
+    assert not tjce.e_util(date(2026, 4, 13))
+    assert tjma.e_util(date(2026, 4, 13))
+
+
+def test_tjce_semana_santa_nao_inclui_a_quarta(tjce, tjma, trt16):
+    """O TJCE para só na quinta e na sexta; TJMA e TRT16 param também na quarta."""
+    assert tjce.e_util(date(2026, 4, 1))
+    assert not tjma.e_util(date(2026, 4, 1))
+    assert not trt16.e_util(date(2026, 4, 1))
+    for dia in (date(2026, 4, 2), date(2026, 4, 3)):
+        assert not tjce.e_util(dia)
+
+
+def test_tjce_nao_tem_dia_do_advogado(tjce, tjma):
+    assert tjce.e_util(date(2026, 8, 11))
+    assert not tjma.e_util(date(2026, 8, 11))
+
+
+# --- Expediente reduzido: CPC, art. 224, § 1º -----------------------------
+
+
+def test_cinzas_no_tjce_e_dia_util_de_expediente_reduzido(tjce):
+    """Ponto facultativo até as 14h não é dia parado: há expediente."""
+    dia = date(2026, 2, 18)
+    assert tjce.e_util(dia) is True
+    assert tjce.expediente_pleno(dia) is False
+    assert "14h" in tjce.motivo_expediente_reduzido(dia)
+
+
+def test_dia_reduzido_conta_no_meio_do_prazo(tjce):
+    """Ele é dia útil, logo entra na contagem."""
+    r = contar_prazo(
+        date(2026, 2, 9), 10,
+        termo=TermoInicial.PUBLICACAO,
+        calendario="TJCE-fortaleza",
+    )
+    contado = next(d for d in r.trilha if d.data == date(2026, 2, 18))
+    assert contado.util is True
+    assert contado.ordinal is not None
+
+
+def test_vencimento_em_dia_reduzido_e_prorrogado(tjce):
+    """CPC, art. 224, § 1º: expediente iniciado depois da hora normal protrai."""
+    r = contar_prazo(
+        date(2026, 2, 9), 5,
+        termo=TermoInicial.PUBLICACAO,
+        calendario="TJCE-fortaleza",
+    )
+    assert r.vencimento == date(2026, 2, 19)
+    assert any("expediente reduzido" in a and "224" in a for a in r.avisos)
+
+
+def test_inicio_em_dia_reduzido_e_prorrogado(tjce):
+    """O dia do começo também é protraído (art. 224, § 1º)."""
+    # Publicação em 17/02 faria a contagem começar em 18/02, dia reduzido.
+    r = contar_prazo(
+        date(2026, 2, 17), 5,
+        termo=TermoInicial.PUBLICACAO,
+        calendario="TJCE-fortaleza",
+    )
+    assert r.inicio_contagem == date(2026, 2, 19)
+
+
+def test_calendario_sem_expediente_reduzido_nao_muda_de_comportamento(trt16):
+    assert trt16.expediente_reduzido == {}
+    assert trt16.expediente_pleno(date(2026, 9, 10)) is True
+
+
+# --- A prova de que calendário trocado é prazo errado ---------------------
+
+
+def test_os_tres_tribunais_do_acervo_divergem_entre_si():
+    """Nenhum dos três tribunais trata estas seis datas de 2026 do mesmo modo."""
+    cals = {k: Calendario.carregar(k) for k in (
+        "TRT16-sao-luis", "TJMA-sao-luis", "TJCE-fortaleza"
+    )}
+    datas = [date(2026, 3, 25), date(2026, 4, 1), date(2026, 4, 13),
+             date(2026, 8, 11), date(2026, 10, 28), date(2026, 10, 30)]
+    assinaturas = {c: tuple(cal.e_util(d) for d in datas) for c, cal in cals.items()}
+    assert len(set(assinaturas.values())) == 3, (
+        f"dois tribunais ficaram idênticos nestas datas: {assinaturas}"
+    )
+
+
+def test_comarcas_do_mesmo_tribunal_tambem_divergem():
+    """Dentro do TRT16, São Luís e Santa Inês não param nos mesmos dias."""
+    sl = Calendario.carregar("TRT16-sao-luis")
+    si = Calendario.carregar("TRT16-santa-ines")
+    # Padroeira de Santa Inês, 21/01: só lá.
+    assert sl.e_util(date(2026, 1, 21)) and not si.e_util(date(2026, 1, 21))
+    # Fundação de São Luís, 08/09: só lá.
+    assert si.e_util(date(2026, 9, 8)) and not sl.e_util(date(2026, 9, 8))
+    # A emancipação de Santa Inês (14/03) não distingue nada em 2026: cai
+    # num sábado, e sábado já não é dia útil em lugar nenhum.
+    assert date(2026, 3, 14).weekday() == 5

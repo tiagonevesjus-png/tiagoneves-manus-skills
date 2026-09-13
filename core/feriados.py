@@ -112,6 +112,10 @@ class Calendario:
         "Corpus Christi",
     )
     locais: dict[str, str] = field(default_factory=dict)  # "AAAA-MM-DD" -> descrição
+    # Dias em que HÁ expediente, mas encerrado antes ou iniciado depois da hora
+    # normal. Contam como dias úteis no meio do prazo, e ao mesmo tempo protraem
+    # o começo e o vencimento (CPC, art. 224, § 1º). Não confundir com feriado.
+    expediente_reduzido: dict[str, str] = field(default_factory=dict)
     confirmado: bool = False
     observacoes: str = ""
     fonte: str = ""            # de onde vieram as datas
@@ -165,10 +169,36 @@ class Calendario:
     def e_util(self, dia: date) -> bool:
         return self.motivo_nao_util(dia) is None
 
-    def proximo_util(self, dia: date, incluir_proprio: bool = True) -> date:
+    def motivo_expediente_reduzido(self, dia: date) -> str | None:
+        """Motivo pelo qual o expediente do dia é reduzido, ou None.
+
+        Dia de expediente reduzido é dia útil: conta no meio do prazo. Só não
+        serve como dia de começo nem de vencimento (CPC, art. 224, § 1º).
+        """
+        if not self.e_util(dia):
+            return None
+        return self.expediente_reduzido.get(dia.isoformat())
+
+    def expediente_pleno(self, dia: date) -> bool:
+        """Dia útil com expediente em horário normal."""
+        return self.e_util(dia) and self.motivo_expediente_reduzido(dia) is None
+
+    def proximo_util(
+        self,
+        dia: date,
+        incluir_proprio: bool = True,
+        exigir_expediente_pleno: bool = False,
+    ) -> date:
+        """Primeiro dia útil a partir de `dia`.
+
+        Com `exigir_expediente_pleno`, pula também os dias de expediente
+        reduzido: é o que o art. 224, § 1º, do CPC manda fazer com o dia do
+        começo e o do vencimento.
+        """
+        aceita = self.expediente_pleno if exigir_expediente_pleno else self.e_util
         atual = dia if incluir_proprio else dia + timedelta(days=1)
         for _ in range(400):
-            if self.e_util(atual):
+            if aceita(atual):
                 return atual
             atual += timedelta(days=1)
         raise RuntimeError(f"Nenhum dia útil encontrado a partir de {dia}")

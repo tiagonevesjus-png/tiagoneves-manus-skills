@@ -61,7 +61,11 @@ clique. Peticionar exige certificado digital sob guarda pessoal do advogado.
 pip install -r requirements.txt
 python3 -m pytest tests/ -q
 python3 tools/gerar_planilha.py --saida "saida/controle.xlsx"
+python3 tools/gerar_filtros_gmail.py --saida "saida/filtros.xml"
+python3 tools/importar_calendario_trt16.py --ano 2027 --municipio "São Luís"
 ```
+
+Os testes rodam também no CI, a cada push e em todo pull request.
 
 ## Documentação
 

@@ -202,10 +202,14 @@ def _resolver_inicio(
     """Devolve (data considerada da intimação/publicação, primeiro dia da contagem)."""
     if termo == TermoInicial.DJE_DISPONIBILIZACAO:
         publicacao = cal.proximo_util(evento + timedelta(days=1))
-        return publicacao, cal.proximo_util(publicacao + timedelta(days=1))
+        return publicacao, cal.proximo_util(
+            publicacao + timedelta(days=1), exigir_expediente_pleno=True
+        )
 
     if termo == TermoInicial.PUBLICACAO:
-        return evento, cal.proximo_util(evento + timedelta(days=1))
+        return evento, cal.proximo_util(
+            evento + timedelta(days=1), exigir_expediente_pleno=True
+        )
 
     if termo == TermoInicial.CONSULTA_ELETRONICA:
         # Lei 11.419/2006, art. 5º, § 2º: consulta em dia não útil desloca a
@@ -217,7 +221,9 @@ def _resolver_inicio(
                 f"({cal.motivo_nao_util(evento)}). Intimação considerada realizada em "
                 f"{intimacao:%d/%m/%Y} (Lei 11.419/2006, art. 5º, § 2º)."
             )
-        return intimacao, cal.proximo_util(intimacao + timedelta(days=1))
+        return intimacao, cal.proximo_util(
+            intimacao + timedelta(days=1), exigir_expediente_pleno=True
+        )
 
     if termo == TermoInicial.DECURSO_PRAZO_CONSULTA:
         # § 3º: 10 dias CORRIDOS a contar do envio; findo o prazo sem consulta,
@@ -229,11 +235,15 @@ def _resolver_inicio(
             "Se houve consulta antes desse termo, recalcule com "
             "TermoInicial.CONSULTA_ELETRONICA usando a data real da consulta."
         )
-        return termo_final, cal.proximo_util(termo_final + timedelta(days=1))
+        return termo_final, cal.proximo_util(
+            termo_final + timedelta(days=1), exigir_expediente_pleno=True
+        )
 
     # Demais incisos do art. 231: o dia do evento é o dia do começo, excluído da
     # contagem (art. 224), que se inicia no dia útil seguinte.
-    return evento, cal.proximo_util(evento + timedelta(days=1))
+    return evento, cal.proximo_util(
+        evento + timedelta(days=1), exigir_expediente_pleno=True
+    )
 
 
 def contar_prazo(
@@ -292,13 +302,15 @@ def contar_prazo(
         while d <= vencimento:
             trilha.append(DiaContado(d, cal.e_util(d), cal.motivo_nao_util(d), (d - inicio).days + 1))
             d += timedelta(days=1)
-        # CPC, art. 224, § 1º: vencimento em dia sem expediente é protraído.
-        if not cal.e_util(vencimento):
+        # CPC, art. 224, § 1º: vencimento em dia sem expediente, ou com
+        # expediente encerrado antes ou iniciado depois da hora normal, é protraído.
+        if not cal.expediente_pleno(vencimento):
             original = vencimento
-            vencimento = cal.proximo_util(vencimento)
+            motivo = cal.motivo_nao_util(original) or cal.motivo_expediente_reduzido(original)
+            vencimento = cal.proximo_util(vencimento, exigir_expediente_pleno=True)
             avisos.append(
                 f"Vencimento recairia em {original:%d/%m/%Y} "
-                f"({cal.motivo_nao_util(original)}); prorrogado para {vencimento:%d/%m/%Y} "
+                f"({motivo}); prorrogado para {vencimento:%d/%m/%Y} "
                 "(CPC, art. 224, § 1º)."
             )
     else:
@@ -317,6 +329,20 @@ def contar_prazo(
                 break
             atual += timedelta(days=1)
         vencimento = atual
+
+        # CPC, art. 224, § 1º: o dia do vencimento é protraído quando o
+        # expediente for encerrado antes ou iniciado depois da hora normal.
+        reduzido = cal.motivo_expediente_reduzido(vencimento)
+        if reduzido:
+            original = vencimento
+            vencimento = cal.proximo_util(
+                vencimento + timedelta(days=1), exigir_expediente_pleno=True
+            )
+            avisos.append(
+                f"O {dias_efetivos}º dia útil recai em {original:%d/%m/%Y}, de expediente "
+                f"reduzido ({reduzido}); vencimento prorrogado para "
+                f"{vencimento:%d/%m/%Y} (CPC, art. 224, § 1º)."
+            )
 
     if vencimento.year != evento.year and vencimento.year not in cal.anos_cobertos():
         avisos.append(
