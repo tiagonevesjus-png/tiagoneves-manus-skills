@@ -225,8 +225,11 @@
     if (!A || !A.disponivel) {
       caixa.appendChild(el('p', {
         classe: 'tnadv-vazio',
-        texto: 'O acervo do sistema (data/acervo.json) está vazio neste computador. Quando ' +
-          'houver processos cadastrados, audiências e prazos aparecem aqui a cada execução do conector.'
+        texto: A && A.encontrado
+          ? 'O acervo do sistema existe, mas ainda não tem processo cadastrado. Audiências e ' +
+            'prazos aparecem aqui quando houver, a cada execução do conector.'
+          : 'O acervo do sistema não foi encontrado. Ele mora no notebook, em data\\acervo.json ' +
+            'da pasta do sistema; o conector precisa rodar a partir dessa pasta.'
       }));
       return caixa;
     }
@@ -288,7 +291,8 @@
 
   function resumoAcervo() {
     var A = D && D.acervo;
-    if (!A || !A.disponivel) return 'acervo vazio';
+    if (!A || !A.encontrado) return 'acervo não encontrado';
+    if (!A.disponivel) return 'acervo sem processos';
     return A.prazos.length + ' prazo(s) em aberto · ' + A.agenda.length + ' audiência(s) · ' +
       A.nao_conferidos + ' não conferido(s)';
   }

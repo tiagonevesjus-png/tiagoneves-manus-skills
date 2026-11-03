@@ -68,6 +68,11 @@ decisão expressa do advogado, integração externa.
 Ver `docs/LGPD.md`. O diretório `data/` não é versionado. Documentos de cliente
 não entram no repositório.
 
+O acervo mora no notebook do advogado, em `data/` da cópia local do sistema,
+fora de pasta sincronizada com nuvem (decisão de 03/11/2026). Em sessão na
+nuvem, `Acervo.salvar()` recusa gravar o acervo padrão: não contorne a recusa.
+O que não puder ser registrado vai para o relatório, para ser feito no notebook.
+
 ## Desenvolvimento
 
 ```bash

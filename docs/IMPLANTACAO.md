@@ -8,6 +8,7 @@ que está pronto mas bloqueado, e o que fazer para destravar.
 | Automação | Estado | O que falta |
 |---|---|---|
 | Motor de prazos, feriados, CNJ, acervo | **Funcionando** | confirmar calendários locais |
+| Acervo no notebook | **Decidido, não instalado** | instalar o sistema no notebook (ver "Onde mora o acervo") |
 | Planilha viva de controle | **Funcionando** | popular o acervo |
 | Dashboard diário (skill) | **Funcionando sob demanda** | — |
 | Dashboard diário (Routine) | **Criada e desativada** | vincular conectores e ativar |
@@ -150,6 +151,50 @@ O prompt completo de cada uma já está armazenado. Para colocá-las no ar:
 
 Se a interface não permitir vincular conector a Routine existente, recrie-a por
 lá usando o prompt armazenado, que pode ser lido com `list_triggers`.
+
+## Onde mora o acervo
+
+Decisão do advogado em 03/11/2026: **no notebook, junto do sistema**, em
+`data\acervo.json` da cópia local do repositório, fora de pasta sincronizada
+com nuvem.
+
+### Instalar o sistema no notebook
+
+Pasta sugerida: `%USERPROFILE%\TNADV\sistema`. Ela fica fora da Área de
+Trabalho e de Documentos, que neste notebook vão para o OneDrive (e a Área de
+Trabalho também é copiada pelo Google Drive).
+
+1. Instale o Git para Windows e o Python 3, marcando "Add python.exe to PATH".
+2. No Prompt de Comando:
+
+   ```bat
+   git clone https://github.com/tiagonevesjus-png/tiagoneves-manus-skills "%USERPROFILE%\TNADV\sistema"
+   cd /d "%USERPROFILE%\TNADV\sistema"
+   py -3 -m pip install -r requirements.txt
+   ```
+
+   Enquanto os PRs #1 e #2 não forem incorporados à `main`, acrescente
+   `-b ccr-44e0bfab-owov8o` ao `git clone`.
+3. Para atualizar o sistema depois, `git pull` nessa pasta. O `data\` não é
+   tocado, porque o Git o ignora. Não baixe o sistema de novo como ZIP em outra
+   pasta: o acervo ficaria para trás na antiga.
+
+### O que muda no funcionamento
+
+- **Quem grava no acervo roda no notebook**: o app Claude com o Claude Code
+  aberto na pasta do sistema, ou `claude remote-control` nela. Em sessão na
+  nuvem, `Acervo.salvar()` recusa gravar o acervo padrão
+  (`AcervoForaDoNotebook`), e nada some em silêncio.
+- **Acervo ausente não é acervo vazio.** `Acervo.carregar()` informa
+  `encontrado`. Planilha, centrais e dashboard dizem "não encontrado" em vez de
+  "nenhum prazo".
+- **Cada gravação** passa por arquivo provisório e guarda a versão anterior em
+  `data\acervo.anterior.json`. Isso protege contra gravação interrompida, não
+  contra perda do notebook: cópia de segurança fora dele é decisão pendente.
+- **As duas Routines**, se ativadas como estão, rodam na nuvem e não alcançam o
+  acervo. O radar ainda cria o evento na agenda e lista no relatório o registro
+  pendente; o dashboard ainda varre Gmail e Agenda, e declara o acervo
+  indisponível. Para que usem o acervo, precisam rodar no notebook.
 
 ## Calendários forenses
 

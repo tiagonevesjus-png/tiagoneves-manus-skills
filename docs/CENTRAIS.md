@@ -25,7 +25,8 @@ liga essa também.
 
 ## Como ligar
 
-No notebook, com o repositório baixado e Python instalado:
+No notebook, na pasta do sistema (sugestão: `%USERPROFILE%\TNADV\sistema`,
+instalação em `docs/IMPLANTACAO.md`, seção "Onde mora o acervo"):
 
 1. Dê dois cliques em `CONECTAR_CENTRAIS_TNADV.bat`, na raiz do repositório.
 2. Ele procura a pasta do kit na Área de Trabalho (com ou sem OneDrive) e em

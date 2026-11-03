@@ -23,6 +23,12 @@ lugar mais controlado, pelo menor tempo.**
 |---|---|---|
 | **Verde** | Número CNJ, órgão, classe, datas de movimento, prazo | `data/acervo.json`, planilha de controle, agenda |
 | **Amarelo** | Nome de cliente e parte contrária, objeto do caso | `data/acervo.json` e planilha, sob controle de acesso |
+
+`data/acervo.json` e as planilhas de controle ficam no notebook do advogado,
+na cópia local do sistema, fora de pasta sincronizada com nuvem (decisão de
+03/11/2026). O código recusa gravar o acervo em sessão na nuvem e avisa quando a
+pasta do sistema está na Área de Trabalho, em Documentos ou em pasta do
+OneDrive, do Google Drive ou do Dropbox.
 | **Vermelho** | Documentos, provas, laudos, dado sensível, valores, dado bancário | Repositório de arquivos do escritório, **nunca** neste repositório |
 
 O `.gitignore` bloqueia `data/`, `saida/`, `.xlsx`, `.docx` e `.pdf`. A barreira
@@ -34,7 +40,7 @@ O `.gitignore` bloqueia `data/`, `saida/`, `.xlsx`, `.docx` e `.pdf`. A barreira
 |---|---|---|---|
 | Dashboard diário | Gmail, Agenda, acervo | rascunho no Gmail | enviar e-mail, apagar, arquivar |
 | Triagem do Gmail | Gmail | rótulos | apagar, mover para lixeira, responder, marcar intimação como lida |
-| Radar de intimações | Gmail | evento na Agenda, acervo | protocolar, marcar prazo como conferido |
+| Radar de intimações | Gmail | evento na Agenda, acervo (só no notebook) | protocolar, marcar prazo como conferido |
 | Planilha de controle | acervo | xlsx local | subir planilha a serviço externo |
 | Skills da camada 2 | material fornecido | documento local | publicar, enviar, protocolar |
 

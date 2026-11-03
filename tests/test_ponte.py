@@ -289,7 +289,8 @@ def test_ferramenta_de_linha_de_comando(kit, monkeypatch, capsys):
     monkeypatch.setattr(ponte, "em_pasta_temporaria", lambda _: False)
     assert modulo.main(["--kit", str(kit), "--acervo", str(kit / "nao-existe.json")]) == 0
     saida = capsys.readouterr().out
-    assert "Acervo vazio" in saida
+    # Arquivo inexistente é "não encontrado", não "vazio": a central diz qual dos dois.
+    assert "Acervo não encontrado" in saida
     assert ponte.esta_ligada((kit / ponte.PAGINAS["automacao"]).read_text(encoding="utf-8"))
 
 

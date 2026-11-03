@@ -11,6 +11,9 @@ mão.
 
 ## Geração
 
+Rode no notebook, na pasta do sistema: é lá que o acervo mora. Fora dele o
+comando diz que o acervo não foi encontrado, e não gera planilha vazia.
+
 ```bash
 python3 tools/gerar_planilha.py --saida "saida/Controle Processual - AAAA-MM-DD.xlsx"
 ```

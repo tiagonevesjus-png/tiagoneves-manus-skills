@@ -1,8 +1,15 @@
 """Acervo processual: modelo de dados e persistência incremental.
 
-O acervo é um arquivo JSON versionável (`data/acervo.json`). Ele é a fonte de
-verdade das automações: o radar de intimações escreve nele, a planilha viva lê
-dele, e o dashboard diário cruza os dois.
+O acervo é um arquivo JSON (`data/acervo.json`). Ele é a fonte de verdade das
+automações: o radar de intimações escreve nele, a planilha viva lê dele, e o
+dashboard diário cruza os dois.
+
+Onde ele mora (decisão do advogado, 03/11/2026): no notebook, em `data/` da
+cópia local do sistema, fora de pasta sincronizada com nuvem. Não vai para o
+GitHub (o `.gitignore` bloqueia `data/`) nem para sessão na nuvem, cujo
+contêiner é apagado ao fim. Por isso `salvar()` recusa gravar o acervo padrão
+quando roda num ambiente desses: melhor um erro claro do que um registro que
+some sem aviso.
 
 Sobre LGPD: mantenha em `data/` apenas o mínimo necessário à gestão do prazo
 (número, órgão, partes, movimento, prazo). Documentos e dados sensíveis de
@@ -12,12 +19,72 @@ cliente permanecem no repositório de arquivos do escritório, não aqui.
 from __future__ import annotations
 
 import json
+import os
+import shutil
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 ARQUIVO_PADRAO = RAIZ / "data" / "acervo.json"
+
+
+class AcervoForaDoNotebook(RuntimeError):
+    """Gravação do acervo padrão num ambiente que não o guarda."""
+
+
+def ambiente_temporario(ambiente: Mapping[str, str] | None = None) -> str | None:
+    """Motivo pelo qual este ambiente não guarda o acervo, ou None.
+
+    Sessão do Claude na nuvem roda num contêiner apagado ao fim; a integração
+    contínua do GitHub também. Sessão no notebook (app Claude, ou
+    `claude remote-control` na pasta do sistema) não tem nenhuma das marcas.
+    """
+    amb = os.environ if ambiente is None else ambiente
+    if amb.get("CLAUDE_CODE_CONTAINER_ID") or amb.get(
+        "CLAUDE_CODE_REMOTE_ENVIRONMENT_TYPE", ""
+    ).startswith("cloud"):
+        return "uma sessão do Claude na nuvem, cujo contêiner é apagado ao fim da sessão"
+    if amb.get("GITHUB_ACTIONS") == "true":
+        return "a integração contínua do GitHub"
+    return None
+
+
+def _dentro(alvo: Path, base: Path) -> bool:
+    """`alvo` está dentro de `base`? Sem diferenciar maiúscula, como no Windows."""
+    a = [p.lower() for p in Path(alvo).absolute().parts]
+    b = [p.lower() for p in Path(base).absolute().parts]
+    return len(a) >= len(b) and a[: len(b)] == b
+
+
+def pasta_sincronizada(
+    caminho: Path | str,
+    home: Path | None = None,
+    ambiente: Mapping[str, str] | None = None,
+) -> str | None:
+    """Serviço de nuvem que provavelmente copia esta pasta, ou None.
+
+    Serve para avisar, não para impedir: o que estiver numa pasta assim sai do
+    notebook, ao contrário do que foi decidido para o acervo.
+    """
+    amb = os.environ if ambiente is None else ambiente
+    alvo = Path(caminho)
+    for var in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
+        if amb.get(var) and _dentro(alvo, Path(amb[var])):
+            return "OneDrive"
+    partes = [p.lower() for p in alvo.absolute().parts]
+    if any(p == "onedrive" or p.startswith("onedrive - ") for p in partes):
+        return "OneDrive"
+    if any(p in ("meu drive", "my drive", "google drive") for p in partes):
+        return "Google Drive"
+    if "dropbox" in partes:
+        return "Dropbox"
+    casa = home or Path.home()
+    for nome in ("Desktop", "Área de Trabalho", "Documents", "Documentos"):
+        if _dentro(alvo, casa / nome):
+            return f"pasta {nome}, que o OneDrive e o Google Drive costumam copiar"
+    return None
 
 STATUS_PRAZO = ("aberto", "cumprido", "prorrogado", "perdido", "cancelado")
 URGENCIAS = ("vermelho", "amarelo", "verde")
@@ -144,12 +211,17 @@ class Processo:
 class Acervo:
     processos: dict[str, Processo] = field(default_factory=dict)
     atualizado_em: str = ""
+    # De onde o acervo foi lido. `encontrado` separa acervo vazio de acervo
+    # ausente: numa sessão que não roda no notebook o arquivo não existe, e
+    # isso não pode ser lido como "nenhum prazo".
+    origem: str = field(default="", compare=False)
+    encontrado: bool = field(default=False, compare=False)
 
     @classmethod
-    def carregar(cls, caminho: Path | str = ARQUIVO_PADRAO) -> "Acervo":
-        p = Path(caminho)
+    def carregar(cls, caminho: Path | str | None = None) -> "Acervo":
+        p = Path(caminho) if caminho is not None else ARQUIVO_PADRAO
         if not p.exists():
-            return cls()
+            return cls(origem=str(p), encontrado=False)
         dados = json.loads(p.read_text(encoding="utf-8"))
         processos = {}
         for numero, bruto in dados.get("processos", {}).items():
@@ -159,17 +231,45 @@ class Acervo:
             processos[numero] = Processo(
                 **bruto, movimentos=movs, prazos=prazos, audiencias=auds
             )
-        return cls(processos=processos, atualizado_em=dados.get("atualizado_em", ""))
+        return cls(
+            processos=processos, atualizado_em=dados.get("atualizado_em", ""),
+            origem=str(p), encontrado=True,
+        )
 
-    def salvar(self, caminho: Path | str = ARQUIVO_PADRAO) -> Path:
-        p = Path(caminho)
+    def salvar(
+        self,
+        caminho: Path | str | None = None,
+        *,
+        permitir_ambiente_temporario: bool = False,
+    ) -> Path:
+        """Grava o acervo e devolve o caminho.
+
+        Recusa gravar o acervo padrão fora do notebook (ver o início do
+        módulo). A gravação passa por arquivo provisório e só então substitui
+        o anterior, que fica guardado como `acervo.anterior.json`: queda de
+        energia ou sincronização no meio não deixam o acervo pela metade.
+        """
+        p = Path(caminho) if caminho is not None else ARQUIVO_PADRAO
+        motivo = ambiente_temporario()
+        if motivo and not permitir_ambiente_temporario and _dentro(p, ARQUIVO_PADRAO):
+            raise AcervoForaDoNotebook(
+                f"O acervo mora no notebook, em data/{ARQUIVO_PADRAO.name} da "
+                f"cópia local do sistema, e esta execução roda em {motivo}: o que "
+                "fosse gravado aqui se perderia. Nada foi gravado. Registre pelo "
+                "notebook (app Claude, ou claude remote-control na pasta do sistema)."
+            )
         p.parent.mkdir(parents=True, exist_ok=True)
         self.atualizado_em = datetime.now().isoformat(timespec="seconds")
         payload = {
             "atualizado_em": self.atualizado_em,
             "processos": {n: asdict(proc) for n, proc in sorted(self.processos.items())},
         }
-        p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        provisorio = p.with_name(p.name + ".gravando")
+        provisorio.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        if p.exists():
+            shutil.copy2(p, p.with_name(f"{p.stem}.anterior{p.suffix}"))
+        os.replace(provisorio, p)
+        self.origem, self.encontrado = str(p), True
         return p
 
     def obter_ou_criar(self, numero: str, **campos) -> Processo:

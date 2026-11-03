@@ -39,7 +39,11 @@ quantos ficaram sem data, para que a omissão apareça em vez de sumir.
 
 ### 3. Acervo processual
 
-Carregue `data/acervo.json` com `core.acervo.Acervo.carregar()`. Liste:
+Carregue `data/acervo.json` com `core.acervo.Acervo.carregar()`. O acervo
+mora no notebook: se `acervo.encontrado` for falso, esta execução não o
+alcança. Não escreva que não há prazo; ponha em `pendencias_sistema`
+"Acervo indisponível nesta execução (fica no notebook): prazos do acervo não
+conferidos hoje." e siga com Gmail e Agenda. Com o acervo encontrado, liste:
 
 - prazos em aberto vencendo em até 10 dias
 - prazos em aberto **sem conferência humana** (`acervo.nao_conferidos()`)

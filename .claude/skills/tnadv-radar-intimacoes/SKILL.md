@@ -128,8 +128,14 @@ Origem: e-mail de [remetente] em [data]
 
 ### 5. Registro no acervo
 
+O acervo mora no notebook. Fora dele (sessão na nuvem, Routine), `salvar()`
+recusa com `AcervoForaDoNotebook`: o evento na agenda continua valendo, e o
+registro vai para o relatório como pendente, com os dados abaixo, para ser
+feito numa sessão no notebook. Nunca grave o acervo em outro caminho para
+contornar a recusa.
+
 ```python
-from core.acervo import Acervo, Movimento, Prazo
+from core.acervo import Acervo, AcervoForaDoNotebook, Movimento, Prazo
 
 acervo = Acervo.carregar()
 proc = acervo.obter_ou_criar(numero.formatado, orgao="...", cliente="...")
@@ -139,12 +145,16 @@ proc.registrar_movimento(Movimento(
 ))
 proc.registrar_prazo(Prazo(
     descricao="Recurso ordinário", vencimento_estimado=str(r.vencimento),
-    evento=str(r.evento), termo_inicial=r.__dict__["regime"].value,
+    evento=str(r.evento),
+    termo_inicial=TermoInicial.DJE_DISPONIBILIZACAO.value,  # o mesmo termo passado a contar_prazo
     regime=r.regime.value, dias=r.dias_prazo,
     base_legal=r.base_legal, avisos=r.avisos,
     id_evento_agenda="<id do evento criado>",
 ))
-acervo.salvar()
+try:
+    acervo.salvar()
+except AcervoForaDoNotebook as aviso:
+    print(aviso)  # registro pendente: listar no relatório
 ```
 
 `id_externo` evita que a mesma intimação, reenviada ou reencaminhada, gere prazo

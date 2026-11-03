@@ -167,6 +167,9 @@ def acervo_para_ponte(
         prazos.append(linha)
 
     return {
+        # Ausente (arquivo não existe onde o conector rodou) é diferente de
+        # vazio (existe, sem processos). A central diz qual dos dois.
+        "encontrado": acervo.encontrado,
         "disponivel": bool(acervo.processos),
         "atualizado_em": acervo.atualizado_em,
         "processos": len(acervo.processos),

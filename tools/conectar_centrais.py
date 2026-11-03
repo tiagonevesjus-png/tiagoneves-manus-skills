@@ -31,7 +31,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import ponte  # noqa: E402
-from core.acervo import ARQUIVO_PADRAO, Acervo  # noqa: E402
+from core.acervo import ARQUIVO_PADRAO, Acervo, pasta_sincronizada  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -70,6 +70,14 @@ def main(argv: list[str] | None = None) -> int:
 
     hoje = date.today()
     acervo = Acervo.carregar(args.acervo)
+    nuvem = pasta_sincronizada(Path(args.acervo).parent)
+    if nuvem:
+        print(
+            f"ATENÇÃO: o acervo está numa pasta copiada para a nuvem ({nuvem}). O combinado "
+            "é que ele fique só no notebook: mova a pasta do sistema para fora dela "
+            "(sugestão: %USERPROFILE%\\TNADV\\sistema).\n",
+            file=sys.stderr,
+        )
     dados = ponte.montar_dados(hoje, acervo, completo=args.completo)
 
     planilha_gerada: Path | None = None
@@ -103,8 +111,10 @@ def main(argv: list[str] | None = None) -> int:
         f"processo(s), {len(a['prazos'])} prazo(s) em aberto e {len(a['agenda'])} "
         f"audiência(s) nos próximos {a['janela_dias']} dias."
     )
-    if not a["disponivel"]:
-        print(f"Acervo vazio ou ausente em {args.acervo}: as centrais mostram só os calendários.")
+    if not a["encontrado"]:
+        print(f"Acervo não encontrado em {args.acervo}: as centrais mostram só os calendários.")
+    elif not a["disponivel"]:
+        print(f"Acervo em {args.acervo} ainda sem processos: as centrais mostram só os calendários.")
     return codigo
 
 
