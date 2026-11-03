@@ -14,6 +14,7 @@ no mesmo e-mail e é o que aparece na pré-visualização da caixa.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 from html import escape
@@ -137,6 +138,25 @@ def _e(texto: str) -> str:
     return escape(str(texto), quote=True)
 
 
+# Número CNJ partido no hífen ("0000001-" numa linha, o resto na outra) é ruim
+# de ler e pior de copiar para o PJe. Todo número dentro de texto corrido vai
+# envolvido em trecho que não quebra.
+_CNJ = re.compile(r"\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}")
+
+
+def _t(texto: str) -> str:
+    """Texto escapado, com os números CNJ protegidos contra quebra de linha."""
+    return _CNJ.sub(
+        lambda m: f'<span style="white-space:nowrap;">{m.group(0)}</span>',
+        _e(texto),
+    )
+
+
+# Palavra longa demais para a caixa do placar em tela de celular. O hífen
+# suave (U+00AD) só aparece se a quebra for necessária.
+_QUEBRA_SUAVE = {"ACOMPANHAMENTO": "ACOMPANHA­MENTO"}
+
+
 def _linha_dado(rotulo: str, valor: str) -> str:
     if not valor:
         return ""
@@ -146,7 +166,7 @@ def _linha_dado(rotulo: str, valor: str) -> str:
         f'font:400 12px/1.5 {SANS};color:{CINZA_TEXTO};vertical-align:top;">'
         f'{_e(rotulo)}</td>'
         f'<td style="padding:2px 0;font:400 13px/1.5 {SANS};color:{GRAFITE};">'
-        f'{_e(valor)}</td>'
+        f'{_t(valor)}</td>'
         f'</tr>'
     )
 
@@ -181,7 +201,7 @@ def _cartao_item(item: Item) -> str:
             f'<tr><td colspan="2" style="padding:10px 0 0;">'
             f'<div style="background:#FEF3F2;border-left:3px solid #B42318;'
             f'padding:8px 12px;font:600 12px/1.55 {SANS};color:#7A271A;">'
-            f'{_e(item.alerta)}</div></td></tr>'
+            f'{_t(item.alerta)}</div></td></tr>'
         )
 
     fontes = ""
@@ -200,7 +220,7 @@ def _cartao_item(item: Item) -> str:
         f'<td style="background:{BRANCO};border:1px solid {CINZA_BORDA};'
         f'border-left:0;padding:14px 16px;">'
         f'<div style="font:700 15px/1.35 {SERIFA};color:{AZUL_MARINHO};'
-        f'margin:0 0 8px;">{_e(item.titulo)}</div>'
+        f'margin:0 0 8px;">{_t(item.titulo)}</div>'
         f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
         f'width="100%" style="border-collapse:collapse;">'
         f'{dados}{venc}{alerta}{fontes}'
@@ -228,7 +248,7 @@ def _bloco_lista(titulo: str, itens: list[str], cor_borda: str, fundo: str) -> s
         return ""
     linhas = "".join(
         f'<li style="margin:0 0 6px;font:400 13px/1.55 {SANS};color:{GRAFITE};">'
-        f'{_e(i)}</li>'
+        f'{_t(i)}</li>'
         for i in itens
     )
     return (
@@ -255,19 +275,22 @@ def _linha_agenda(
     risco = "none" if ultima else f"1px solid {CINZA_BORDA}"
     bloco_detalhe = (
         f'<div style="margin:3px 0 0;font:400 12px/1.5 {SANS};'
-        f'color:{CINZA_TEXTO};">{_e(detalhe)}</div>' if detalhe else ""
+        f'color:{CINZA_TEXTO};">{_t(detalhe)}</div>' if detalhe else ""
     )
     bloco_alerta = (
         f'<div style="margin:6px 0 0;font:600 12px/1.5 {SANS};color:#7A271A;">'
-        f'{_e(alerta)}</div>' if alerta else ""
+        f'{_t(alerta)}</div>' if alerta else ""
     )
+    # A classe tn-quando só é usada pela página autônoma, que estreita a coluna
+    # em tela de celular. No e-mail ela é inerte.
     return (
         f'<tr>'
-        f'<td width="120" style="padding:10px 12px 10px 0;font:700 12px/1.4 {SANS};'
+        f'<td class="tn-quando" width="120" style="padding:10px 12px 10px 0;'
+        f'font:700 12px/1.4 {SANS};'
         f'color:{cor_quando};vertical-align:top;white-space:nowrap;'
         f'border-bottom:{risco};">{_e(quando)}</td>'
         f'<td style="padding:10px 0;border-bottom:{risco};">'
-        f'<div style="font:600 13px/1.4 {SANS};color:{GRAFITE};">{_e(titulo)}</div>'
+        f'<div style="font:600 13px/1.4 {SANS};color:{GRAFITE};">{_t(titulo)}</div>'
         f'{bloco_detalhe}{bloco_alerta}</td>'
         f'</tr>'
     )
@@ -352,33 +375,47 @@ def _bloco_agenda(compromissos: list[Compromisso]) -> str:
                       ultima=(n == len(compromissos) - 1))
         for n, c in enumerate(compromissos)
     )
+    # Com border-collapse, padding na própria <table> é ignorado e o texto
+    # encostava na borda. O recuo fica na célula que envolve a lista, como no
+    # bloco da agenda do dia.
     return (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-        f'border="0" style="border-collapse:collapse;background:{BRANCO};'
-        f'border:1px solid {CINZA_BORDA};padding:0 16px;">'
-        f'{linhas}</table>'
+        f'border="0" style="border-collapse:collapse;">'
+        f'<tr><td style="background:{BRANCO};border:1px solid {CINZA_BORDA};'
+        f'padding:0 16px;">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'border="0" style="border-collapse:collapse;">{linhas}</table>'
+        f'</td></tr></table>'
     )
 
 
 def _placar(dash: Dashboard) -> str:
+    # Três caixas de largura igual, alinhadas às bordas dos cartões de baixo.
+    # A margem negativa de antes encurtava o placar 8px à direita, e sem
+    # table-layout:fixed a caixa de rótulo mais longo engolia as outras duas no
+    # celular. O espaço entre caixas sai do recuo interno das células: 6px nas
+    # pontas, 3px de cada lado na do meio, o que dá caixas e vãos iguais.
+    recuos = ("0 6px 0 0", "0 3px", "0 0 0 6px")
     celulas = []
-    for nivel in ("vermelho", "amarelo", "verde"):
+    for nivel, recuo in zip(("vermelho", "amarelo", "verde"), recuos):
         cor = URGENCIA[nivel]
         n = len(dash.por_urgencia(nivel))
+        rotulo = _QUEBRA_SUAVE.get(cor["rotulo"], cor["rotulo"])
         celulas.append(
-            f'<td width="33%" style="padding:0 4px;">'
+            f'<td width="33%" style="width:33.33%;padding:{recuo};vertical-align:top;">'
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
             f'border="0" style="border-collapse:collapse;background:{cor["fundo"]};'
             f'border:1px solid {cor["faixa"]};">'
-            f'<tr><td align="center" style="padding:12px 8px;">'
+            f'<tr><td align="center" style="padding:12px 6px;">'
             f'<div style="font:700 26px/1 {SERIFA};color:{cor["faixa"]};">{n}</div>'
             f'<div style="margin:5px 0 0;font:700 10px/1.3 {SANS};'
-            f'letter-spacing:.08em;color:{cor["texto"]};">{cor["rotulo"]}</div>'
+            f'letter-spacing:.05em;color:{cor["texto"]};">{_e(rotulo)}</div>'
             f'</td></tr></table></td>'
         )
     return (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-        f'border="0" style="border-collapse:collapse;margin:0 -4px 18px;">'
+        f'border="0" style="border-collapse:collapse;table-layout:fixed;'
+        f'margin:0 0 18px;">'
         f'<tr>{"".join(celulas)}</tr></table>'
     )
 
@@ -391,11 +428,12 @@ def render_html(dash: Dashboard) -> str:
     esc = dash.escritorio
     corpo: list[str] = []
 
-    # Cabeçalho institucional
+    # Cabeçalho institucional. As classes tn-* são ganchos da página autônoma,
+    # que reduz o recuo lateral no celular; no e-mail não têm efeito.
     corpo.append(
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'border="0" style="border-collapse:collapse;">'
-        f'<tr><td style="background:{AZUL_MARINHO};padding:26px 28px 22px;">'
+        f'<tr><td class="tn-pad" style="background:{AZUL_MARINHO};padding:26px 28px 22px;">'
         f'<div style="font:400 11px/1.3 {SANS};letter-spacing:.20em;'
         f'color:{DOURADO_CLARO};text-transform:uppercase;">{_e(esc.nome)}</div>'
         f'<div style="margin:10px 0 0;font:700 25px/1.2 {SERIFA};color:{BRANCO};">'
@@ -409,7 +447,7 @@ def render_html(dash: Dashboard) -> str:
 
     corpo.append('<table role="presentation" width="100%" cellpadding="0" '
                  'cellspacing="0" border="0" style="border-collapse:collapse;">'
-                 f'<tr><td style="background:{PAPEL};padding:22px 28px 8px;">')
+                 f'<tr><td class="tn-pad" style="background:{PAPEL};padding:22px 28px 8px;">')
 
     corpo.append(_placar(dash))
 
@@ -466,13 +504,13 @@ def render_html(dash: Dashboard) -> str:
     corpo.append(
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'border="0" style="border-collapse:collapse;">'
-        f'<tr><td style="background:{PAPEL};padding:6px 28px 22px;">'
+        f'<tr><td class="tn-pad" style="background:{PAPEL};padding:6px 28px 22px;">'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'border="0" style="border-collapse:collapse;">'
         f'<tr><td style="background:#FFFBEB;border:1px solid {DOURADO};'
         f'padding:12px 16px;font:700 12px/1.6 {SANS};color:#7A2E0E;">'
         f'{_e(AVISO_ESTIMATIVA)}</td></tr></table></td></tr>'
-        f'<tr><td style="background:{AZUL_ESCURO};padding:18px 28px 22px;">'
+        f'<tr><td class="tn-pad" style="background:{AZUL_ESCURO};padding:18px 28px 22px;">'
         f'<div style="font:700 13px/1.4 {SERIFA};color:{BRANCO};">'
         f'{_e(esc.advogado)}</div>'
         f'<div style="margin:2px 0 0;font:400 12px/1.4 {SANS};color:{DOURADO};">'
@@ -486,7 +524,7 @@ def render_html(dash: Dashboard) -> str:
         f'<div style="margin:0;padding:0;background:{PAPEL};">'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'border="0" style="border-collapse:collapse;background:{PAPEL};">'
-        f'<tr><td align="center" style="padding:16px 8px;">'
+        f'<tr><td class="tn-moldura" align="center" style="padding:16px 8px;">'
         f'<table role="presentation" width="{LARGURA}" cellpadding="0" cellspacing="0" '
         f'border="0" style="border-collapse:collapse;width:{LARGURA}px;max-width:100%;'
         f'background:{PAPEL};">'
@@ -505,9 +543,16 @@ def render_pagina(dash: Dashboard) -> str:
         f'<title>{_e(titulo)}</title>\n'
         # Só a página autônoma usa media query. O corpo do e-mail não pode,
         # porque cliente de e-mail costuma descartar o bloco <style>.
+        # No celular, os 28px de recuo de cada lado comiam um sétimo da tela e
+        # espremiam a coluna de dados; caem para 14px, e a coluna de horário da
+        # agenda deixa de reservar 120px fixos.
         '<style>@page{margin:12mm}'
         'body{margin:0}'
         '@media (max-width:680px){table[width="640"]{width:100%!important}}'
+        '@media (max-width:480px){'
+        '.tn-moldura{padding:0!important}'
+        '.tn-pad{padding-left:14px!important;padding-right:14px!important}'
+        '.tn-quando{width:84px!important;white-space:normal!important}}'
         '@media print{body{background:#fff}}</style>\n'
         f'</head>\n<body style="margin:0;background:{PAPEL};">\n'
         f'{render_html(dash)}\n</body>\n</html>\n'
