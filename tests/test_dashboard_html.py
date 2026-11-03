@@ -274,3 +274,53 @@ def test_planilha_e_dashboard_partilham_a_identidade():
     for nivel in identidade.URGENCIA:
         assert planilha.CORES_URGENCIA[nivel] == \
             identidade.URGENCIA[nivel]["fundo"].lstrip("#").upper()
+
+
+# --- Layout: defeitos corrigidos em 03/11/2026 ------------------------------
+
+
+def test_nenhuma_tabela_depende_de_padding_proprio(dash):
+    """Com border-collapse, padding na <table> é ignorado: o texto encostava na
+    borda em Próximos compromissos. O recuo tem de estar na célula."""
+    html = render_html(dash)
+    for estilo in re.findall(r'<table[^>]*style="([^"]*)"', html):
+        assert "padding" not in estilo, estilo
+
+
+def test_placar_tem_caixas_iguais_e_sem_margem_negativa(dash):
+    """Margem negativa encurtava o placar à direita; sem table-layout:fixed a
+    caixa de rótulo mais longo engolia as outras no celular."""
+    html = render_html(dash)
+    assert "margin:0 -" not in html
+    placar = html[html.index("table-layout:fixed"):]
+    assert placar.count("width:33.33%") == 3
+
+
+def test_rotulo_longo_do_placar_quebra_com_hifen_suave(dash):
+    html = render_html(dash)
+    assert "ACOMPANHA­MENTO" in html
+    # O título da seção continua com a palavra inteira.
+    assert "ACOMPANHAMENTO" in html
+
+
+def test_numero_cnj_nao_quebra_no_hifen(dash):
+    protegido = '<span style="white-space:nowrap;">0801774-18.2026.8.10.0050</span>'
+    assert protegido in render_html(dash)
+    # Também dentro de texto corrido, como o detalhe da agenda do dia.
+    d = Dashboard(
+        data=date(2026, 9, 14), resumo="",
+        itens=[Item(urgencia="vermelho", titulo="Prazo",
+                    processo="0801774-18.2026.8.10.0050",
+                    providencia="Contestar", vencimento_estimado="2026-09-14")],
+    )
+    assert f"{protegido}  ·  Contestar" in render_html(d)
+
+
+def test_pagina_autonoma_reduz_recuo_no_celular(dash):
+    pagina = render_pagina(dash)
+    assert "@media (max-width:480px)" in pagina
+    assert ".tn-pad{" in pagina
+    # O corpo do e-mail continua sem media query e sem <style>.
+    corpo = render_html(dash)
+    assert 'class="tn-pad"' in corpo
+    assert "@media" not in corpo and "<style" not in corpo

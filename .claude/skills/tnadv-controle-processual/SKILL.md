@@ -11,6 +11,9 @@ mão.
 
 ## Geração
 
+Rode no notebook, na pasta do sistema: é lá que o acervo mora. Fora dele o
+comando diz que o acervo não foi encontrado, e não gera planilha vazia.
+
 ```bash
 python3 tools/gerar_planilha.py --saida "saida/Controle Processual - AAAA-MM-DD.xlsx"
 ```
@@ -27,6 +30,12 @@ planilha.gerar(acervo, "saida/controle.xlsx", hoje=date.today())
 ```
 
 ## Abas
+
+Em todas: data gravada como data (ordena e filtra por período), filtro ligado
+no cabeçalho, número do processo congelado à esquerda e impressão em paisagem
+numa página de largura. Regime e termo inicial aparecem por extenso
+("CPC, dias úteis"), não pelo código interno. "Dias restantes" é fotografia do
+dia da geração, e o cabeçalho da coluna diz qual dia.
 
 **Acervo.** Um processo por linha: número, cliente, polo, parte contrária, órgão,
 classe, assunto, situação, quantidade de prazos abertos e próximo vencimento

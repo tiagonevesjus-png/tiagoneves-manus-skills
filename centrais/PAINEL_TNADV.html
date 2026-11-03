@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel TNADV</title>
+<!-- Origem: repositório tiagoneves-manus-skills, pasta centrais/. Copiado para a
+     pasta do kit por tools/conectar_centrais.py: altere no repositório. -->
+<link rel="stylesheet" href="tnadv_ponte/tnadv_ponte.css">
+</head>
+<body>
+<header class="tnadv-painel-cabecalho">
+  <div>
+    <small id="tnadv-escritorio">Tiago Neves Advocacia Empresarial</small>
+    <h1>Painel do sistema</h1>
+  </div>
+</header>
+<main id="tnadv-painel">
+  <div id="tnadv-sem-dados">
+    <p><strong>Os dados do sistema não foram encontrados.</strong></p>
+    <p>Este painel lê a pasta <code>tnadv_ponte</code>, ao lado deste arquivo. Para
+    criá-la ou atualizá-la, rode <code>CONECTAR_CENTRAIS_TNADV.bat</code> na pasta do
+    sistema (repositório tiagoneves-manus-skills).</p>
+  </div>
+</main>
+<script src="tnadv_ponte/tnadv_dados.js"></script>
+<script src="tnadv_ponte/tnadv_ponte.js" data-pagina="painel" data-raiz=""></script>
+</body>
+</html>

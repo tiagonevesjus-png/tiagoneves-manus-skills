@@ -45,6 +45,9 @@ de prazos com base legal conferida na fonte oficial.
 - **`dashboard_html.py`** — modelo e renderização do dashboard diário, com o
   bloco AGENDA DO DIA no topo, em HTML que sobrevive a cliente de e-mail e
   imprime limpo.
+- **`ponte.py`** — liga o sistema às duas centrais HTML do kit do notebook:
+  calendários forenses na calculadora, agenda e prazos do acervo, conferência
+  de número CNJ e navegação comum. Ver [`docs/CENTRAIS.md`](docs/CENTRAIS.md).
 
 ## Três premissas de projeto
 
@@ -68,6 +71,7 @@ python3 tools/gerar_planilha.py --saida "saida/controle.xlsx"
 python3 tools/gerar_filtros_gmail.py --saida "saida/filtros.xml"
 python3 tools/importar_calendario_trt16.py --ano 2027 --municipio "São Luís"
 python3 tools/exemplo_dashboard.py --saida "saida/exemplo-dashboard.html"
+python3 tools/conectar_centrais.py --simular   # no Windows: CONECTAR_CENTRAIS_TNADV.bat
 ```
 
 Os testes rodam também no CI, a cada push e em todo pull request.
@@ -77,4 +81,5 @@ Os testes rodam também no CI, a cada push e em todo pull request.
 - [`docs/BASE-LEGAL-PRAZOS.md`](docs/BASE-LEGAL-PRAZOS.md) — transcrição literal de tudo que o motor aplica
 - [`docs/IMPLANTACAO.md`](docs/IMPLANTACAO.md) — estado de cada peça e o que falta destravar
 - [`docs/LGPD.md`](docs/LGPD.md) — sigilo profissional e classificação de dados
+- [`docs/CENTRAIS.md`](docs/CENTRAIS.md) — ponte com as centrais HTML do notebook
 - [`CLAUDE.md`](CLAUDE.md) — regras de trabalho no repositório

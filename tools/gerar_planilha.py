@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import planilha  # noqa: E402
-from core.acervo import ARQUIVO_PADRAO, Acervo  # noqa: E402
+from core.acervo import ARQUIVO_PADRAO, Acervo, pasta_sincronizada  # noqa: E402
 
 
 def main() -> int:
@@ -25,9 +25,25 @@ def main() -> int:
     args = ap.parse_args()
 
     acervo = Acervo.carregar(args.acervo)
-    if not acervo.processos:
-        print(f"Acervo vazio em {args.acervo}. Nada a gerar.", file=sys.stderr)
+    if not acervo.encontrado:
+        print(
+            f"Acervo não encontrado em {args.acervo}. Ele mora no notebook, em data\\acervo.json "
+            "da pasta do sistema: rode este comando lá. Nada a gerar.",
+            file=sys.stderr,
+        )
         return 1
+    if not acervo.processos:
+        print(f"Acervo em {args.acervo} ainda sem processos. Nada a gerar.", file=sys.stderr)
+        return 1
+    # A planilha traz nome de cliente; o acervo, também. Os dois ficam no notebook.
+    for rotulo, caminho in (("acervo", Path(args.acervo).parent), ("planilha", Path(args.saida).parent)):
+        nuvem = pasta_sincronizada(caminho)
+        if nuvem:
+            print(
+                f"ATENÇÃO: a pasta do {rotulo} é copiada para a nuvem ({nuvem}). O combinado é "
+                "que acervo e planilha fiquem só no notebook.",
+                file=sys.stderr,
+            )
 
     destino = planilha.gerar(acervo, args.saida)
     pendentes = acervo.nao_conferidos()
