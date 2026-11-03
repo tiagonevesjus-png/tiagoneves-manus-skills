@@ -15,6 +15,7 @@ que está pronto mas bloqueado, e o que fazer para destravar.
 | Radar de intimações (Routine) | **Criada e desativada** | vincular conectores e ativar |
 | Triagem do Gmail | **Funcionando, 100% nativa** | importar os filtros; aplicar cores à mão |
 | Sete skills da camada 2 | **Funcionando sob demanda** | — |
+| Ponte com as centrais do notebook | **Pronta, não instalada** | rodar `CONECTAR_CENTRAIS_TNADV.bat` no notebook (ver `docs/CENTRAIS.md`) |
 
 ## Permissões verificadas
 

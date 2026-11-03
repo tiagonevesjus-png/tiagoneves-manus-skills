@@ -12,3 +12,9 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
+
+# Saída da ponte com as centrais: é gerada na pasta do kit, no notebook, e
+# pode trazer dado de cliente. Nunca entra no repositório.
+tnadv_ponte/
+tnadv_dados.js
+*.antes-da-ponte.html

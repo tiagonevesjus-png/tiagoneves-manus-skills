@@ -1,0 +1,238 @@
+/*
+ * TNADV · estilo da ponte entre o sistema e as centrais do kit.
+ * Origem: repositório tiagoneves-manus-skills, pasta centrais/. Cores copiadas
+ * de core/identidade.py (um teste confere que não se desencontram).
+ *
+ * Duas partes: o visual dos elementos da ponte (prefixo .tnadv-) e as
+ * correções de layout de cada central, presas ao atributo data-tnadv-pagina
+ * que o script põe no <html>. Sem o script, nada daqui se aplica às centrais.
+ */
+
+:root {
+  --tnadv-azul: #1B2A4A;
+  --tnadv-azul-escuro: #132038;
+  --tnadv-dourado: #C6A15B;
+  --tnadv-dourado-claro: #E4D2AC;
+  --tnadv-branco: #FFFFFF;
+  --tnadv-papel: #F7F8FA;
+  --tnadv-borda: #D8DEE7;
+  --tnadv-cinza: #4A5568;
+  --tnadv-grafite: #1F2937;
+  --tnadv-vermelho: #B42318;
+  --tnadv-vermelho-fundo: #FEF3F2;
+  --tnadv-vermelho-texto: #7A271A;
+  --tnadv-amarelo: #B54708;
+  --tnadv-amarelo-fundo: #FFFAEB;
+  --tnadv-amarelo-texto: #7A2E0E;
+  --tnadv-verde: #067647;
+  --tnadv-verde-fundo: #F0FDF4;
+  --tnadv-verde-texto: #085D3A;
+  --tnadv-sans: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ------------------------------------------------------- barra comum */
+
+.tnadv-barra {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  padding: 7px 16px;
+  background: var(--tnadv-azul-escuro);
+  border-bottom: 2px solid var(--tnadv-dourado);
+  font: 500 13px/1.3 var(--tnadv-sans);
+  color: var(--tnadv-dourado-claro);
+  position: relative;
+  z-index: 60;
+}
+.tnadv-marca { font-weight: 700; letter-spacing: .14em; color: var(--tnadv-dourado); }
+.tnadv-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.tnadv-links a {
+  color: var(--tnadv-branco);
+  text-decoration: none;
+  padding: 4px 9px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.tnadv-links a:hover { border-color: var(--tnadv-dourado); }
+.tnadv-links a[aria-current="page"] { background: var(--tnadv-azul); border-color: var(--tnadv-dourado); color: var(--tnadv-dourado-claro); }
+.tnadv-status { margin-left: auto; font-size: 12px; color: var(--tnadv-dourado-claro); }
+.tnadv-status-alerta { color: #FDE68A; font-weight: 600; }
+button.tnadv-status-erro {
+  margin-left: 0;
+  font: 600 12px/1.3 var(--tnadv-sans);
+  color: var(--tnadv-branco);
+  background: var(--tnadv-vermelho);
+  border: 0;
+  border-radius: 4px;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+/* No celular: marca e links numa linha, situação dos dados na de baixo. */
+@media (max-width: 640px) {
+  .tnadv-barra { padding: 6px 12px; gap: 4px 8px; }
+  .tnadv-links { flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% - 64px); }
+  .tnadv-links a { white-space: nowrap; padding: 4px 7px; }
+  .tnadv-status { margin-left: 0; flex-basis: 100%; }
+}
+
+/* --------------------------------------------------------- número CNJ */
+
+.tnadv-cnj { white-space: nowrap; }
+.tnadv-cnj-invalido { text-decoration: underline wavy var(--tnadv-vermelho); text-underline-offset: 3px; }
+.tnadv-cnj-alerta {
+  display: inline-block;
+  margin: 2px 4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--tnadv-vermelho);
+  color: var(--tnadv-branco);
+  font: 700 11px/1.5 var(--tnadv-sans);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.tnadv-piscar { outline: 3px solid var(--tnadv-vermelho); outline-offset: 2px; border-radius: 2px; }
+
+/* -------------------------------------------- agenda e prazos do acervo */
+
+.tnadv-sistema { font: 400 14px/1.5 var(--tnadv-sans); color: var(--tnadv-grafite); }
+.tnadv-placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; }
+.tnadv-placar-caixa { border: 1px solid; border-radius: 6px; padding: 8px; text-align: center; }
+.tnadv-placar-caixa strong { display: block; font: 700 22px/1.1 Garamond, 'EB Garamond', 'Times New Roman', serif; }
+.tnadv-placar-caixa span { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.tnadv-placar-caixa.tnadv-vermelho { background: var(--tnadv-vermelho-fundo); border-color: var(--tnadv-vermelho); color: var(--tnadv-vermelho-texto); }
+.tnadv-placar-caixa.tnadv-amarelo { background: var(--tnadv-amarelo-fundo); border-color: var(--tnadv-amarelo); color: var(--tnadv-amarelo-texto); }
+.tnadv-placar-caixa.tnadv-verde { background: var(--tnadv-verde-fundo); border-color: var(--tnadv-verde); color: var(--tnadv-verde-texto); }
+.tnadv-bloco h3 { font: 700 12px/1.3 var(--tnadv-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--tnadv-azul); margin: 14px 0 6px; }
+.tnadv-lista { list-style: none; margin: 0; padding: 0; border: 1px solid var(--tnadv-borda); border-radius: 6px; background: var(--tnadv-branco); }
+.tnadv-lista li { display: flex; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--tnadv-borda); border-left: 4px solid var(--tnadv-azul); }
+.tnadv-lista li:first-child { border-top: 0; }
+.tnadv-lista li.tnadv-vermelho { border-left-color: var(--tnadv-vermelho); }
+.tnadv-lista li.tnadv-amarelo { border-left-color: var(--tnadv-amarelo); }
+.tnadv-lista li.tnadv-verde { border-left-color: var(--tnadv-verde); }
+.tnadv-quando { flex: 0 0 auto; min-width: 84px; font-weight: 700; color: var(--tnadv-azul); }
+.tnadv-o-que { flex: 1 1 auto; min-width: 0; }
+.tnadv-o-que small { display: block; color: var(--tnadv-cinza); font-size: 12px; }
+.tnadv-pendente { display: inline-block; margin-top: 3px; font: 700 11px/1.4 var(--tnadv-sans); font-style: normal; color: var(--tnadv-vermelho-texto); background: var(--tnadv-vermelho-fundo); padding: 0 6px; border-radius: 3px; }
+.tnadv-vazio { color: var(--tnadv-cinza); margin: 6px 0; }
+.tnadv-aviso { margin: 14px 0 0; padding: 9px 12px; background: #FFFBEB; border: 1px solid var(--tnadv-dourado); font: 700 12px/1.5 var(--tnadv-sans); color: var(--tnadv-amarelo-texto); }
+
+.tnadv-recolhivel { margin: 0 0 18px; background: var(--tnadv-branco); border: 1px solid var(--tnadv-borda); border-top: 3px solid var(--tnadv-azul); border-radius: 8px; padding: 0 16px; }
+.tnadv-recolhivel > summary { cursor: pointer; padding: 12px 0; font: 500 14px/1.4 var(--tnadv-sans); color: var(--tnadv-azul); }
+.tnadv-recolhivel[open] > summary { border-bottom: 1px solid var(--tnadv-borda); margin-bottom: 10px; }
+.tnadv-recolhivel > .tnadv-sistema { padding-bottom: 14px; }
+
+/* --------------------------------- calculadora: calendário e opções */
+
+.tnadv-calendario { margin: 0 0 12px; font: 400 12px/1.5 var(--tnadv-sans); }
+.tnadv-calendario label { display: block; margin: 0 0 4px; font-weight: 600; }
+.tnadv-calendario select { width: 100%; padding: 8px 10px; border-radius: 8px; font: inherit; font-size: 13px; }
+.tnadv-nota, .tnadv-nota-alerta { margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; }
+.tnadv-nota-alerta { font-weight: 600; }
+.tnadv-opcao { margin: 4px 0 0; font: 400 11.5px/1.45 var(--tnadv-sans); opacity: .85; }
+.tnadv-consulta { margin: 6px 0 0; font-size: 11.5px; }
+.tnadv-consulta > summary { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+/* abas que rolam de lado: a borda direita esmaece quando há mais abas */
+.tnadv-rolavel.tnadv-tem-mais {
+  -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+  mask-image: linear-gradient(to right, #000 82%, transparent);
+}
+
+/* ------------------------------------------ Central de Automação */
+
+html[data-tnadv-pagina="automacao"] .tnadv-calendario label { color: #CBD5E1; }
+html[data-tnadv-pagina="automacao"] .tnadv-calendario select { background: #020617; color: #fff; border: 1px solid var(--tnadv-dourado); }
+html[data-tnadv-pagina="automacao"] .tnadv-nota { color: #94A3B8; }
+html[data-tnadv-pagina="automacao"] .tnadv-nota-alerta { color: #FCD34D; }
+html[data-tnadv-pagina="automacao"] .tnadv-opcao { color: #CBD5E1; }
+
+/* Tabela do auditor CNJ: display:flex numa <td> tira a célula do modelo de
+   tabela, e a linha perdia o alinhamento. A célula volta a ser célula. */
+html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj td.flex { display: table-cell; }
+html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj td.flex > a { display: inline-block; margin: 2px 6px 4px 0; }
+
+html[data-tnadv-pagina="automacao"] .tnadv-consulta > summary { color: #CBD5E1; }
+
+@media (max-width: 640px) {
+  /* Cabeçalho grudado ocupava 228px dos 844px da tela. */
+  html[data-tnadv-pagina="automacao"] body > header { position: static; }
+  /* Resultado do auditor CNJ em cartões: na tabela, o número partia no hífen
+     e o selo de validação ocupava quatro linhas. */
+  html[data-tnadv-pagina="automacao"] #panel-aletheia thead { display: none; }
+  html[data-tnadv-pagina="automacao"] #panel-aletheia table,
+  html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj,
+  html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj tr { display: block; }
+  html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj tr { padding: 10px 0; }
+  html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj td,
+  html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj td.flex { display: block; padding: 3px 4px; }
+  html[data-tnadv-pagina="automacao"] #tabelaResultadosCnj td:first-child { white-space: nowrap; font-size: 14px; }
+}
+
+/* ------------------------------------------------ Central Multi-IA */
+
+/* Cinco abas em uma linha só. Antes, a quinta caía sozinha numa segunda linha
+   no notebook, e no celular as cinco empilhavam em quase 300px. */
+html[data-tnadv-pagina="multi_ia"] .tabs-bar { flex-wrap: nowrap; overflow-x: auto; }
+html[data-tnadv-pagina="multi_ia"] .tab-btn { flex: 1 1 0; min-width: 0; }
+@media (max-width: 900px) {
+  html[data-tnadv-pagina="multi_ia"] .tab-btn { flex: 0 0 auto; white-space: nowrap; }
+}
+
+/* O número do processo partia no meio ("...5.16.00" / "03"). */
+html[data-tnadv-pagina="multi_ia"] .hearing-cnj { word-break: normal; overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  /* Cabeçalho grudado ocupava 245px dos 844px da tela. */
+  html[data-tnadv-pagina="multi_ia"] .top-banner { position: static; }
+  /* Quatro indicadores em duas colunas, em vez de quatro telas de rolagem. */
+  html[data-tnadv-pagina="multi_ia"] .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  html[data-tnadv-pagina="multi_ia"] .kpi-card { padding: 12px; }
+  html[data-tnadv-pagina="multi_ia"] .kpi-value { font-size: 1.1rem; }
+  html[data-tnadv-pagina="multi_ia"] .kpi-label { font-size: .66rem; }
+  html[data-tnadv-pagina="multi_ia"] .section-card { padding: 16px; }
+  html[data-tnadv-pagina="multi_ia"] .hearing-card { padding: 14px; }
+  html[data-tnadv-pagina="multi_ia"] .tnadv-quando { min-width: 70px; }
+  /* Pauta em cartões: cinco colunas espremidas viravam linhas de 140px de
+     altura com rolagem lateral. Cada célula mostra o nome da coluna acima. */
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes thead { display: none; }
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes,
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes tbody,
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes tr,
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes td { display: block; width: auto; }
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes tr {
+    border: 1px solid var(--tnadv-borda); border-radius: 8px; margin: 0 0 10px; padding: 6px 0; background: var(--tnadv-branco);
+  }
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes td { border: 0; padding: 4px 12px; }
+  html[data-tnadv-pagina="multi_ia"] .tnadv-tabela-cartoes td[data-rotulo]::before {
+    content: attr(data-rotulo); display: block; font: 700 10.5px/1.4 var(--tnadv-sans);
+    letter-spacing: .06em; text-transform: uppercase; color: var(--tnadv-cinza);
+  }
+}
+
+/* ------------------------------------------------------------ Painel */
+
+html[data-tnadv-pagina="painel"] body { margin: 0; background: var(--tnadv-papel); color: var(--tnadv-grafite); font: 400 15px/1.55 var(--tnadv-sans); }
+.tnadv-painel-cabecalho { background: var(--tnadv-azul); border-bottom: 3px solid var(--tnadv-dourado); color: var(--tnadv-branco); padding: 24px 16px 20px; }
+.tnadv-painel-cabecalho > div, #tnadv-painel { max-width: 920px; margin: 0 auto; }
+.tnadv-painel-cabecalho small { display: block; font: 400 11px/1.3 var(--tnadv-sans); letter-spacing: .2em; text-transform: uppercase; color: var(--tnadv-dourado-claro); }
+.tnadv-painel-cabecalho h1 { margin: 8px 0 0; font: 700 26px/1.2 Garamond, 'EB Garamond', 'Times New Roman', serif; }
+#tnadv-painel { padding: 20px 16px 40px; }
+#tnadv-painel h2 { font: 700 12px/1.3 var(--tnadv-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--tnadv-azul); margin: 28px 0 10px; }
+.tnadv-atalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.tnadv-cartao { display: block; text-decoration: none; background: var(--tnadv-branco); border: 1px solid var(--tnadv-borda); border-left: 4px solid var(--tnadv-dourado); border-radius: 6px; padding: 14px 16px; color: var(--tnadv-grafite); }
+.tnadv-cartao:hover { border-color: var(--tnadv-azul); }
+.tnadv-cartao strong { display: block; font: 700 17px/1.3 Garamond, 'EB Garamond', 'Times New Roman', serif; color: var(--tnadv-azul); margin: 0 0 4px; }
+.tnadv-cartao span { font-size: 13px; color: var(--tnadv-cinza); }
+.tnadv-rolagem { overflow-x: auto; }
+.tnadv-tabela { width: 100%; border-collapse: collapse; background: var(--tnadv-branco); font-size: 13px; }
+.tnadv-tabela th, .tnadv-tabela td { text-align: left; padding: 8px 10px; border: 1px solid var(--tnadv-borda); vertical-align: top; }
+.tnadv-tabela th { background: var(--tnadv-azul); color: var(--tnadv-branco); font-weight: 600; }
+.tnadv-ok { color: var(--tnadv-verde-texto); font-weight: 700; }
+.tnadv-nao { color: var(--tnadv-vermelho-texto); font-weight: 700; }
+#tnadv-painel .tnadv-nota { color: var(--tnadv-cinza); }
+#tnadv-sem-dados { background: var(--tnadv-branco); border: 1px solid var(--tnadv-dourado); padding: 14px 16px; }
+
+@media print {
+  .tnadv-barra { display: none; }
+}

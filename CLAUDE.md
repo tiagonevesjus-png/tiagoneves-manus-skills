@@ -10,6 +10,7 @@ core/                  motor compartilhado (prazos, feriados, CNJ, acervo, plani
 core/calendarios/      calendários forenses por juízo, confirmados pelo advogado
 .claude/skills/        as onze skills de automação
 tools/                 utilitários de linha de comando
+centrais/              script, estilo e painel da ponte com as centrais do kit
 tests/                 testes do núcleo
 docs/                  base legal transcrita, implantação e LGPD
 data/                  acervo processual (não versionado)
