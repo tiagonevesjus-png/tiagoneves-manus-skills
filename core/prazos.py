@@ -123,6 +123,44 @@ BASE_LEGAL_TERMO: dict[TermoInicial, tuple[str, ...]] = {
     ),
 }
 
+# Rótulos para exibição (planilha, centrais). Não carregam base legal: só dão
+# nome legível aos códigos acima, que continuam sendo o valor gravado no acervo.
+ROTULO_REGIME: dict[Regime, str] = {
+    Regime.CPC_DIAS_UTEIS: "CPC, dias úteis",
+    Regime.CLT_DIAS_UTEIS: "CLT, dias úteis",
+    Regime.JEC_DIAS_UTEIS: "Lei 9.099, dias úteis",
+    Regime.DIAS_CORRIDOS: "Dias corridos",
+}
+
+ROTULO_TERMO: dict[TermoInicial, str] = {
+    TermoInicial.DJE_DISPONIBILIZACAO: "Disponibilização no DJe",
+    TermoInicial.PUBLICACAO: "Publicação",
+    TermoInicial.CONSULTA_ELETRONICA: "Consulta eletrônica",
+    TermoInicial.DECURSO_PRAZO_CONSULTA: "Decurso do prazo de consulta",
+    TermoInicial.JUNTADA_AR: "Juntada do AR",
+    TermoInicial.JUNTADA_MANDADO: "Juntada do mandado",
+    TermoInicial.ATO_DO_ESCRIVAO: "Ato do escrivão",
+    TermoInicial.CARGA: "Carga dos autos",
+    TermoInicial.CIENCIA_EXPRESSA: "Ciência expressa",
+}
+
+
+def rotulo_regime(codigo: str) -> str:
+    """Nome legível do regime; devolve o próprio código se for desconhecido."""
+    try:
+        return ROTULO_REGIME[Regime(codigo)]
+    except ValueError:
+        return codigo
+
+
+def rotulo_termo(codigo: str) -> str:
+    """Nome legível do termo inicial; devolve o próprio código se for desconhecido."""
+    try:
+        return ROTULO_TERMO[TermoInicial(codigo)]
+    except ValueError:
+        return codigo
+
+
 # Prerrogativas de prazo em dobro, com base legal conferida.
 PRERROGATIVAS_DOBRO: dict[str, str] = {
     "fazenda_publica": (

@@ -28,6 +28,12 @@ planilha.gerar(acervo, "saida/controle.xlsx", hoje=date.today())
 
 ## Abas
 
+Em todas: data gravada como data (ordena e filtra por período), filtro ligado
+no cabeçalho, número do processo congelado à esquerda e impressão em paisagem
+numa página de largura. Regime e termo inicial aparecem por extenso
+("CPC, dias úteis"), não pelo código interno. "Dias restantes" é fotografia do
+dia da geração, e o cabeçalho da coluna diz qual dia.
+
 **Acervo.** Um processo por linha: número, cliente, polo, parte contrária, órgão,
 classe, assunto, situação, quantidade de prazos abertos e próximo vencimento
 (colorido pelo semáforo).
